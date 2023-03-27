@@ -1,0 +1,4 @@
+.venv
+build
+pybuildc.egg-info
+pybuildc/__pycache__
