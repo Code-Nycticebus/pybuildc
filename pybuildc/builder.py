@@ -55,8 +55,6 @@ def load_config(directory: Path):
 def load_cache(directory: Path) -> Cache:
     cache_file = Path(directory, ".build", "cache_mtime.pkl")
     if not cache_file.exists():
-        cache_file.parent.mkdir(parents=True, exist_ok=True)
-        cache_file.touch()
         return dict()
 
     return pickle.loads(cache_file.read_bytes())
@@ -64,6 +62,7 @@ def load_cache(directory: Path) -> Cache:
 
 def save_cache(directory: Path, cache_mtime: Cache):
     cache_file = Path(directory, ".build", "cache_mtime.pkl")
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
     cache_file.write_bytes(pickle.dumps(cache_mtime))
 
 

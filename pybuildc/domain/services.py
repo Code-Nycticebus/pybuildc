@@ -50,6 +50,7 @@ class Compiler:
             obj: bool = False) -> Cmd:
         return (
             self.cc,
+            *self.includes,
             *map(str, files),
             *(self.warnings if not warnings else ()),
             *self.libraries,
