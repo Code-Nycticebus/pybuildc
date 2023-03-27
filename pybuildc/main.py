@@ -1,10 +1,10 @@
 from subprocess import CalledProcessError
 import sys
-from args import parse_args
+from pybuildc.args import parse_args
 
 from returns.io import IOResultE, IOFailure, IOSuccess
 
-from commands import build_command, run_command
+from pybuildc.commands import build_command, run_command
 
 
 # TODO error handling

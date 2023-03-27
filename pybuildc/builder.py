@@ -10,7 +10,7 @@ from returns.io import IOResultE, IOFailure, IOSuccess, impure_safe
 from returns.iterables import Fold
 from returns.curry import partial
 
-from domain.services import Compiler, Cmd
+from pybuildc.domain.services import Compiler, Cmd
 
 Cache = Dict[Path, float]
 

@@ -1,6 +1,6 @@
 from returns.io import IOResultE
 
-from builder import build
+from pybuildc.builder import build
 
 
 def build_command(args) -> IOResultE:
