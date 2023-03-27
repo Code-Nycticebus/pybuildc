@@ -1,3 +1,4 @@
+from subprocess import CalledProcessError
 import sys
 from args import parse_args
 
@@ -7,6 +8,16 @@ from commands import build_command, run_command
 
 
 # TODO error handling
+def error(e: Exception) -> int:
+    match e:
+        case FileNotFoundError():
+            # TODO args[0] because of custom error
+            print(f"File not found: {e.filename}")
+            return 1
+        case CalledProcessError():
+            print(" ".join(e.cmd))
+            return e.returncode
+        case _: raise e
 
 
 def pybuildc(args) -> IOResultE:
@@ -26,11 +37,11 @@ def main() -> int:
     match pybuildc(args):
         case IOSuccess(r):
             print(r.unwrap())
-            return 0
         case IOFailure(e):
-            raise e.failure()
+            return error(e.failure())
+        case _: pass
 
-        case _: return 1
+    return 0
 
 
 # Is run in development only

@@ -1,13 +1,17 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
+from pathlib import Path
 
-Cmd = list[str]
 
-RELEASE_WARNINGS: list[str] = [
+Args = tuple[str, ...]
+Cmd = tuple[str, ...]
+
+RELEASE_WARNINGS: Args = (
     "-Wall",
     "-Wpedantic"
-]
+)
 
-DEBUG_WARNINGS: list[str] = [
+DEBUG_WARNINGS: Args = (
     "-Wall",
     "-Wextra",
     "-Wpedantic",
@@ -16,59 +20,53 @@ DEBUG_WARNINGS: list[str] = [
     "-Wnull-dereference",
     "-Wformat=2",
     "-Wno-unused-command-line-argument",
-]
+)
 
 # TODO some way to disable sanitizer
-DEBUG_FLAGS: list[str] = [
+DEBUG_FLAGS: Args = (
     "-ggdb",
     "-fsanitize=address,undefined,leak",
     "-fno-omit-frame-pointer",
     "-fPIC"
-]
+)
 
-RELEASE_FLAGS: list[str] = [
+RELEASE_FLAGS: Args = (
     "-O2",
-]
+)
+
 
 @dataclass(frozen=True)
 class Compiler:
     cc: str
-    warnings: list[str]
-    flags: list[str]
-    libraries: list[str]
+    warnings: tuple[str]
+    flags: tuple[str]
+    libraries: tuple[str]
 
-    def compile(self, files: list[str], output: str, flags: list[str], disable_warnings=False) -> Cmd:
-        return [
+    def compile(
+            self,
+            files: Iterable[Path],
+            output: Path,
+            flags: Iterable[str],
+            disable_warnings=False) -> Cmd:
+        return (
             self.cc,
-            *files,
+            *map(str, files),
             *(self.warnings if not disable_warnings else ()),
             *self.libraries,
-            *(self.flags + flags),
+            *(self.flags + tuple(flags)),
             "-o",
-            output,
-        ]
+            str(output),
+        )
 
     @classmethod
     def create(
             cls,
             cc: str,
-            libraries: list[str],
+            libraries: Iterable[str],
             debug: bool):
         return cls(
             cc=cc,
             warnings=DEBUG_WARNINGS if debug else RELEASE_WARNINGS,
             flags=DEBUG_FLAGS if debug else RELEASE_FLAGS,
-            libraries=libraries,
+            libraries=tuple(libraries),
         )
-
-
-if __name__ == "__main__":
-    import subprocess
-
-    def execute(cmd: Cmd):
-        print(" ".join(cmd))
-        subprocess.run(cmd)
-
-    c = Compiler.create("gcc", ["-lm"], True)
-    execute(c.compile(["src/main.c"], "src/main.o", ["-c"]))
-    execute(c.compile(["src/main.o"], "main", []))
