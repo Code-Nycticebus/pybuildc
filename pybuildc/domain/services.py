@@ -19,7 +19,6 @@ DEBUG_WARNINGS: Args = (
     "-Wshadow",
     "-Wnull-dereference",
     "-Wformat=2",
-    "-Wno-unused-command-line-argument",
 )
 
 # TODO some way to disable sanitizer
@@ -46,14 +45,15 @@ class Compiler:
             self,
             files: Iterable[Path],
             output: Path,
-            flags: Iterable[str],
-            disable_warnings=False) -> Cmd:
+            warnings: bool=True,
+            obj: bool=False) -> Cmd:
         return (
             self.cc,
             *map(str, files),
-            *(self.warnings if not disable_warnings else ()),
+            *(self.warnings if not warnings else ()),
             *self.libraries,
-            *(self.flags + tuple(flags)),
+            *self.flags,
+            *(("-c", ) if obj else ()),
             "-o",
             str(output),
         )

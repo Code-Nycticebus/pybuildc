@@ -20,6 +20,11 @@ def parse_args(args: list[str]) -> argparse.Namespace:
         type=Path,
         default=Path.cwd(),
     )
+    build_parser.add_argument(
+        "-r", "--release",
+        help="Enables optimizations and removes debug flags",
+        action="store_true",
+    )
 
     run_parser = subparser.add_parser(
         "run", help="Builds the project and runs the binary")

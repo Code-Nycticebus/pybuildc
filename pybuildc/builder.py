@@ -1,5 +1,10 @@
+from collections.abc import Iterable
 from pathlib import Path
+import pickle
 import subprocess
+from typing import Dict
+
+import toml 
 
 from returns.io import IOResultE, IOFailure, IOSuccess, impure_safe
 from returns.iterables import Fold
@@ -7,6 +12,12 @@ from returns.curry import partial
 
 from domain.services import Compiler, Cmd
 
+Cache = Dict[Path, float]
+
+def display(files: Iterable[Path]):
+    for file in files:
+        print(f"  [BUILDING] {file}")
+        yield file
 
 @impure_safe
 def execute(cmd: Cmd):
@@ -28,37 +39,81 @@ def compile_to_obj_file(cc: Compiler, project_directory: Path, obj_file: Path):
             convert_to_obj_file(
                 project_directory,
                 obj_file),
-            ["-c"]))
+            obj=True))
 
+@impure_safe
+def load_config(directory: Path):
+    with open(Path(directory, "pybuildc.toml"), "r") as f:
+        return toml.load(f)
 
-def build(directory: Path) -> IOResultE:
-    config_file = Path(directory, "pybuildc.toml")
-    if not config_file.exists():
-        e = FileNotFoundError()
-        e.filename = config_file
-        return IOFailure(e)
+def load_cache(directory: Path) -> Cache:
+    cache_file = Path(directory, ".build", "cache_mtime.pkl")
+    if not cache_file.exists():
+        cache_file.touch()
+        return dict()
+    
+    return pickle.loads(cache_file.read_bytes())
 
-    cc = Compiler.create("gcc", [], False)
+def save_cache(directory: Path, cache_mtime: Cache):
+    cache_file = Path(directory, ".build", "cache_mtime.pkl")
+    cache_file.write_bytes(pickle.dumps(cache_mtime))
+
+def include_file_changed(cache_mtime: Cache, project_directory: Path) -> bool:
+    has_changed = False
+    for file in project_directory.rglob("src/*.h"):
+        if cache_mtime.get(file, 0.0) < (t := get_file_m_time(file)):
+            cache_mtime[file] = t
+            has_changed = True 
+    return has_changed
+
+def get_file_m_time(file: Path) -> float:
+    if not file.exists():
+        return 1.0
+    return file.stat().st_mtime
+
+def has_to_compile(cache_mtime: Cache, file: Path) -> bool:
+    if cache_mtime.get(file, 0.0) < (t := get_file_m_time(file)):
+        cache_mtime[file] = t
+        return True
+    return False
+
+def build(directory: Path, debug: bool) -> IOResultE:
+    match load_config(directory):
+        case IOSuccess(c):
+            config = c.unwrap()
+        case e:
+            return e
+   
+    cache_mtime: Cache = load_cache(directory)
+
 
     src_files = tuple(directory.rglob("src/**/*.c"))
 
-   # TODO filter src files to the ones that need recompiling
-    res = Fold.collect(
-        map(partial(compile_to_obj_file, cc, directory), src_files), IOSuccess(()))
-    match res:
-        case IOFailure():
-            return res
+    cc = Compiler.create(config["project"].get("cc", "gcc"), config.get("dependecies", tuple()), debug)
 
     obj_files = tuple(map(partial(convert_to_obj_file, directory), src_files))
     # Creates every directory needed
     obj_files[0].parent.mkdir(parents=True, exist_ok=True)
 
-    exe_file = Path(directory, ".build", "bin", "project_name")
-    exe_file.parent.mkdir(parents=True, exist_ok=True)
+   # TODO filter src files to the ones that need recompiling
+    includes_changed = include_file_changed(cache_mtime, directory)
+    compile_files = display(filter(
+        lambda file: includes_changed or has_to_compile(cache_mtime, file), 
+        src_files))
 
-    res = execute(cc.compile(obj_files, exe_file, []))
+    res = Fold.collect(
+        map(partial(compile_to_obj_file, cc, directory), compile_files), IOSuccess(()))
     match res:
         case IOFailure():
             return res
 
-    return IOResultE.from_value(exe_file)
+    exe_file = Path(directory, ".build", "bin", config["project"]["name"])
+    exe_file.parent.mkdir(parents=True, exist_ok=True)
+
+    match execute(cc.compile(obj_files, exe_file, warnings=False)):
+        case IOSuccess():
+            save_cache(directory, cache_mtime)
+            return IOSuccess(exe_file)
+        case e:
+            return e
+
