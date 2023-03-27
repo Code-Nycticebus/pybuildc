@@ -1,5 +1,5 @@
-def build_command():
-    raise NotImplementedError()
+def build_command(args) -> int:
+   return 0 
 
 def run_command():
     raise NotImplementedError()
