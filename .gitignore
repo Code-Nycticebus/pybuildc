@@ -2,3 +2,4 @@
 build
 pybuildc.egg-info
 **/__pycache__
+examples
