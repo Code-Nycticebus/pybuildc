@@ -1,14 +1,9 @@
-def build_command(args) -> int:
-   return 0 
+from returns.io import IOResultE
 
-def run_command():
-    raise NotImplementedError()
 
-def test_command():
-    raise NotImplementedError()
+def build_command(args) -> IOResultE:
+    return IOResultE.from_value(args)
 
-def clean_command():
-    raise NotImplementedError()
 
-def install_command():
-    raise NotImplementedError()
+def run_command(args) -> IOResultE:
+    raise NotImplementedError(args)
