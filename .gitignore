@@ -1,4 +1,5 @@
-.venv
+.dev-env
+.test-env
 build
 pybuildc.egg-info
 **/__pycache__

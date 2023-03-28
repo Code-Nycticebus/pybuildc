@@ -1,9 +1,14 @@
 from subprocess import CalledProcessError
 import sys
-from pybuildc.args import parse_args
 
 from returns.io import IOResultE, IOFailure, IOSuccess
 
+if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent.parent))
+
+from pybuildc.args import parse_args
 from pybuildc.commands import build_command, run_command
 
 

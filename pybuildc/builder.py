@@ -105,7 +105,7 @@ def build(directory: Path, debug: bool) -> IOResultE:
     cc = Compiler.create(
         cc=config["project"].get("cc", "gcc"),
         libraries=config.get("dependecies", tuple()),
-        includes=map(str, include_files),
+        includes=(f"-I{Path(directory, 'src').absolute()}", ),
         debug=debug,
     )
 
