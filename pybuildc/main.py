@@ -9,7 +9,7 @@ if __name__ == "__main__":
     sys.path.append(str(Path(__file__).parent.parent))
 
 from pybuildc.args import parse_args
-from pybuildc.commands import build_command, run_command
+from pybuildc.commands import build_command, new_command, run_command
 
 
 # TODO error handling
@@ -27,6 +27,8 @@ def error(e: Exception) -> int:
 
 def pybuildc(args) -> IOResultE:
     match args.action:
+        case 'new':
+            return new_command(args)
         case 'build':
             return build_command(args)
         case 'run':
