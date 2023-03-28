@@ -3,6 +3,7 @@ from pathlib import Path
 import pickle
 import subprocess
 from typing import Dict
+from concurrent import futures
 
 import toml
 
@@ -24,6 +25,7 @@ def display(files: Iterable[Path]):
 @impure_safe
 def execute(cmd: Cmd):
     subprocess.run(cmd, check=True)
+    return cmd
 
 
 def convert_to_obj_file(project_directory, file: Path) -> Path:
@@ -80,11 +82,20 @@ def file_changed(cache_mtime: Cache, file: Path) -> bool:
 def collect_flags(
     dependecies: Dict[str, Dict[str, list[str]]], key: str
 ) -> tuple[str, ...]:
+    """Collects flags from dictionary structure"""
     return sum(
         (*(tuple(val[key]) for val in dependecies.values() if key in val),), tuple()
     )
 
 
+def process_cmds(cmds: Iterable[Cmd]) -> Iterable[IOResultE]:
+    with futures.ProcessPoolExecutor() as executor:
+        return (
+            f.result()
+            for f in futures.as_completed(
+                [executor.submit(execute, cmd) for cmd in cmds]
+            )
+        )
 
 
 # TODO should return a tuple of Cmds!
@@ -113,7 +124,9 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
     exe_file = Path(directory, ".build", "bin", config["project"]["name"])
     exe_file.parent.mkdir(parents=True, exist_ok=True)
 
-    res = Fold.collect_all(map(execute, builder(directory, cache_mtime, cc, exe_file)), IOSuccess(()))
+    cmds = builder(directory, cache_mtime, cc, exe_file)
+
+    res = Fold.collect(process_cmds(cmds[:-1]), IOSuccess(()))
     match res:
         case IOFailure():
             return res
@@ -122,7 +135,9 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
     return IOSuccess(exe_file)
 
 
-def builder(directory: Path, cache_mtime: Dict[Path, float], cc: Compiler, exe_file: Path) -> tuple[Cmd, ...]:
+def builder(
+    directory: Path, cache_mtime: Dict[Path, float], cc: Compiler, exe_file: Path
+) -> tuple[Cmd, ...]:
     src_files = tuple(Path(directory, "src").rglob("*.c"))
     include_files = tuple(Path(directory, "src").rglob("*.h"))
     includes_changed = include_file_changed(cache_mtime, include_files)

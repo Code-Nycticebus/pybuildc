@@ -7,6 +7,7 @@ from returns.io import IOResultE, IOFailure, IOSuccess
 def dev_import_module():
     import sys
     from pathlib import Path
+
     sys.path.append(str(Path(__file__).parent.parent))
 
 
@@ -15,6 +16,7 @@ if __name__ == "__main__":
 
 from pybuildc.args import parse_args
 from pybuildc.commands import build_command, new_command, run_command
+
 
 # TODO error handling
 def error(e: Exception) -> int:
