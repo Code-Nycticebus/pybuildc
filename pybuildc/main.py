@@ -2,11 +2,13 @@ from subprocess import CalledProcessError
 import sys
 
 from returns.io import IOResultE, IOFailure, IOSuccess
-
-if __name__ == "__main__":
+def dev_import_module():
     import sys
     from pathlib import Path
     sys.path.append(str(Path(__file__).parent.parent))
+
+if __name__ == "__main__":
+    dev_import_module()
 
 from pybuildc.args import parse_args
 from pybuildc.commands import build_command, new_command, run_command

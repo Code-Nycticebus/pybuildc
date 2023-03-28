@@ -88,6 +88,24 @@ def file_changed(cache_mtime: Cache, file: Path) -> bool:
     return False
 
 
+
+def dependecie_libs(dependecies: Dict[str, Dict]) -> tuple[str, ...]:
+    return sum(
+        (
+            *(tuple(val["lib"]) for val in dependecies.values() if "lib" in val), 
+        ), 
+        tuple()
+    )
+
+
+def dependecie_includes(dependecies: Dict[str, Dict]) -> tuple[str, ...]:
+    return sum(
+        (
+            *(tuple(val["include"]) for val in dependecies.values() if "include" in val), 
+        ), 
+        tuple()
+    )
+
 def build(directory: Path, debug: bool) -> IOResultE[Path]:
     config_file = Path(directory, "pybuildc.toml")
     match load_config(config_file):
@@ -102,10 +120,13 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
     include_files = tuple(Path(directory, "src").rglob("*.h"))
     includes_changed = include_file_changed(cache_mtime, include_files)
 
+    dependecies = config.get("dependecies", tuple())
+
     cc = Compiler.create(
         cc=config["project"].get("cc", "gcc"),
-        libraries=config.get("dependecies", tuple()),
-        includes=(f"-I{Path(directory, 'src').absolute()}", ),
+        libraries=dependecie_libs(dependecies),
+        includes=(f"-I{Path(directory, 'src').absolute()}", *dependecie_includes(dependecies))
+,
         debug=debug,
     )
 

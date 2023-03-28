@@ -64,13 +64,13 @@ class Compiler:
     def create(
             cls,
             cc: str,
-            includes: Iterable[str],
-            libraries: Iterable[str],
+            includes: tuple[str, ...],
+            libraries: tuple[str, ...],
             debug: bool):
         return cls(
             cc=cc,
             warnings=DEBUG_WARNINGS if debug else RELEASE_WARNINGS,
             flags=DEBUG_FLAGS if debug else RELEASE_FLAGS,
-            includes=tuple(includes),
-            libraries=tuple(libraries),
+            includes=includes,
+            libraries=libraries,
         )
