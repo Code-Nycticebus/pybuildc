@@ -45,6 +45,7 @@ def compile_to_obj_file(cc: Compiler, project_directory: Path, obj_file: Path):
                 obj_file),
             obj=True))
 
+
 @impure_safe
 def load_config(config_file: Path):
     return toml.loads(config_file.read_text())
@@ -117,9 +118,8 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
         src_files
     ))
 
-    res = Fold.collect(
-        map(partial(compile_to_obj_file, cc, directory), compile_files), IOSuccess(())
-    )
+    res = Fold.collect(map(partial(compile_to_obj_file, cc,
+                                   directory), compile_files), IOSuccess(()))
     match res:
         case IOFailure():
             return res
@@ -132,4 +132,4 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
             save_cache(directory, cache_mtime)
             return IOSuccess(exe_file)
         case e:
-            return e.map(lambda _: Path()) 
+            return e.map(lambda _: Path())

@@ -10,11 +10,11 @@ def parse_args(args: list[str]) -> argparse.Namespace:
         dest="action",
         required=True,
         description="Build action",
-    ) 
+    )
     new_parser = subparser.add_parser("new", help="Creates a new project")
     new_parser.add_argument(
-        "directory", 
-        help="Name of the project directory",        
+        "directory",
+        help="Name of the project directory",
         type=Path,
     )
     new_parser.add_argument(
@@ -23,8 +23,6 @@ def parse_args(args: list[str]) -> argparse.Namespace:
         help="creates a library template instead of a executable template.",
         default=False,
     )
-
-
 
     build_parser = subparser.add_parser("build", help="Builds the project")
     build_parser.add_argument(
