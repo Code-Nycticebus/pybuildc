@@ -23,25 +23,28 @@ def display(files: Iterable[Path]):
 
 
 @impure_safe
-def execute(cmd: Cmd):
+def execute(cmd: Cmd) -> Cmd:
     subprocess.run(cmd, check=True)
     return cmd
 
 
-def convert_to_obj_file(project_directory, file: Path) -> Path:
+def convert_to_obj_file(project_directory: Path, target: str, file: Path) -> Path:
     obj_file = Path(
         project_directory,
         ".build",
+        target,
         "obj",
-        file.with_suffix(".o").relative_to(Path(project_directory, "src")),
+        file.relative_to(Path(project_directory, "src")).with_suffix(".o"),
     )
     obj_file.parent.mkdir(parents=True, exist_ok=True)
     return obj_file
 
 
-def compile_to_obj_file(cc: Compiler, project_directory: Path, obj_file: Path) -> Cmd:
+def compile_to_obj_file(
+    cc: Compiler, project_directory: Path, target: str, obj_file: Path
+) -> Cmd:
     return cc.compile(
-        [obj_file], convert_to_obj_file(project_directory, obj_file), obj=True
+        [obj_file], convert_to_obj_file(project_directory, target, obj_file), obj=True
     )
 
 
@@ -51,7 +54,7 @@ def load_config(config_file: Path):
 
 
 def load_cache(directory: Path) -> Cache:
-    cache_file = Path(directory, ".build", "cache_mtime.pkl")
+    cache_file = Path(directory, "cache_mtime.pkl")
     if not cache_file.exists():
         return dict()
 
@@ -59,7 +62,7 @@ def load_cache(directory: Path) -> Cache:
 
 
 def save_cache(directory: Path, cache_mtime: Cache):
-    cache_file = Path(directory, ".build", "cache_mtime.pkl")
+    cache_file = Path(directory, "cache_mtime.pkl")
     cache_file.parent.mkdir(parents=True, exist_ok=True)
     cache_file.write_bytes(pickle.dumps(cache_mtime))
 
@@ -88,18 +91,23 @@ def collect_flags(
     )
 
 
-def process_cmds(cmds: Iterable[Cmd]) -> Iterable[IOResultE]:
+def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
     with futures.ProcessPoolExecutor() as executor:
-        return (
-            f.result()
-            for f in futures.as_completed(
-                [executor.submit(execute, cmd) for cmd in cmds]
-            )
-        )
+        return Fold.collect(
+            (
+                f.result()
+                for f in futures.as_completed(
+                    tuple(executor.submit(execute, cmd) for cmd in cmds)
+                )
+            ),
+            IOSuccess(()),
+        ) or IOFailure(Exception("Somehow process_cmds failed!"))
 
 
-# TODO should return a tuple of Cmds!
 def build(directory: Path, debug: bool) -> IOResultE[Path]:
+    target = "debug" if debug else "release"
+    build_directory = Path(directory, ".build", target)
+
     config_file = Path(directory, "pybuildc.toml")
     match load_config(config_file):
         case IOSuccess(c):
@@ -107,7 +115,7 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
         case e:
             return e.map(lambda _: Path())
 
-    cache_mtime: Cache = load_cache(directory)
+    cache_mtime: Cache = load_cache(build_directory)
 
     dependecies = config.get("dependecies", dict())
 
@@ -121,23 +129,36 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
         debug=debug,
     )
 
-    exe_file = Path(directory, ".build", "bin", config["project"]["name"])
+    exe_file = Path(
+        build_directory,
+        "bin",
+        f"""{config["project"]["name"]}-{target}-{config['project']['version']}""",
+    )
     exe_file.parent.mkdir(parents=True, exist_ok=True)
 
-    cmds = builder(directory, cache_mtime, cc, exe_file)
+    obj_cmds, binary_cmd = builder(directory, cache_mtime, cc, exe_file, target)
 
-    res = Fold.collect(process_cmds(cmds[:-1]), IOSuccess(()))
+    res: IOResultE[Iterable[Cmd]] = process_cmds(obj_cmds)
     match res:
         case IOFailure():
             return res
 
-    save_cache(directory, cache_mtime)
+    res2 = execute(binary_cmd)
+    match res2:
+        case IOFailure():
+            return res2
+
+    save_cache(build_directory, cache_mtime)
     return IOSuccess(exe_file)
 
 
 def builder(
-    directory: Path, cache_mtime: Dict[Path, float], cc: Compiler, exe_file: Path
-) -> tuple[Cmd, ...]:
+    directory: Path,
+    cache_mtime: Dict[Path, float],
+    cc: Compiler,
+    exe_file: Path,
+    target: str,
+) -> tuple[tuple[Cmd, ...], Cmd]:
     src_files = tuple(Path(directory, "src").rglob("*.c"))
     include_files = tuple(Path(directory, "src").rglob("*.h"))
     includes_changed = include_file_changed(cache_mtime, include_files)
@@ -146,8 +167,8 @@ def builder(
             lambda file: file_changed(cache_mtime, file) or includes_changed, src_files
         )
     )
-    build_commands = map(partial(compile_to_obj_file, cc, directory), compile_files)
-
-    obj_files = tuple(map(partial(convert_to_obj_file, directory), src_files))
-
-    return (*build_commands, cc.compile(obj_files, exe_file))
+    obj_cmds = tuple(
+        map(partial(compile_to_obj_file, cc, directory, target), compile_files)
+    )
+    obj_files = map(partial(convert_to_obj_file, directory, target), src_files)
+    return obj_cmds, cc.compile(obj_files, exe_file)
