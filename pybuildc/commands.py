@@ -1,7 +1,7 @@
 from pathlib import Path
 import subprocess
 
-from returns.io import IOResultE
+from returns.io import IOResultE, impure_safe
 
 from pybuildc.builder import build
 
@@ -53,9 +53,8 @@ int main(void) {{ printf("Test: " LIBNAME "\\n"); }}
     )
 
 def build_command(args) -> IOResultE:
-    # TODO i should create a config here?
     return build(args.directory, not args.release)
 
 
 def run_command(args) -> IOResultE:
-    return build(args.directory, not args.release).map(subprocess.run)
+    return build(args.directory, not args.release).bind(lambda exe: impure_safe(subprocess.run)(exe, check=True)).map(lambda process: process.args)

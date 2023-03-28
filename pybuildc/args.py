@@ -49,5 +49,10 @@ def parse_args(args: list[str]) -> argparse.Namespace:
         type=Path,
         default=Path.cwd(),
     )
+    run_parser.add_argument(
+        "-r", "--release",
+        help="Enables optimizations and removes debug flags",
+        action="store_true",
+    )
 
     return parser.parse_args(args)
