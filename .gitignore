@@ -4,4 +4,5 @@ build
 .eggs
 pybuildc.egg-info
 **/__pycache__
+**/__version__
 examples
