@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 
 from returns.io import IOResultE
 
@@ -57,4 +58,4 @@ def build_command(args) -> IOResultE:
 
 
 def run_command(args) -> IOResultE:
-    raise NotImplementedError(args)
+    return build(args.directory, not args.release).map(subprocess.run)

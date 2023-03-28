@@ -45,11 +45,9 @@ def compile_to_obj_file(cc: Compiler, project_directory: Path, obj_file: Path):
                 obj_file),
             obj=True))
 
-
 @impure_safe
-def load_config(directory: Path):
-    with open(Path(directory, "pybuildc.toml"), "r") as f:
-        return toml.load(f)
+def load_config(config_file: Path):
+    return toml.loads(config_file.read_text())
 
 
 def load_cache(directory: Path) -> Cache:
@@ -89,12 +87,13 @@ def file_changed(cache_mtime: Cache, file: Path) -> bool:
     return False
 
 
-def build(directory: Path, debug: bool) -> IOResultE:
-    match load_config(directory):
+def build(directory: Path, debug: bool) -> IOResultE[Path]:
+    config_file = Path(directory, "pybuildc.toml")
+    match load_config(config_file):
         case IOSuccess(c):
             config = c.unwrap()
         case e:
-            return e
+            return e.map(lambda _: Path())
 
     cache_mtime: Cache = load_cache(directory)
 
@@ -133,4 +132,4 @@ def build(directory: Path, debug: bool) -> IOResultE:
             save_cache(directory, cache_mtime)
             return IOSuccess(exe_file)
         case e:
-            return e
+            return e.map(lambda _: Path()) 
