@@ -118,8 +118,10 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
         src_files
     ))
 
-    res = Fold.collect(map(partial(compile_to_obj_file, cc,
-                                   directory), compile_files), IOSuccess(()))
+    res = Fold.collect(
+        map(partial(compile_to_obj_file, cc, directory), compile_files),
+        IOSuccess(()),
+    )
     match res:
         case IOFailure():
             return res
