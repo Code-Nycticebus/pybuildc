@@ -16,7 +16,7 @@ pip install .
 Creates new project with some default files to get you started. 
 Also generates a pybuild.toml file.
 ```terminal
-pybuildc new <Project Name>
+pybuildc new <project directory>
 ```
 
 ### Build

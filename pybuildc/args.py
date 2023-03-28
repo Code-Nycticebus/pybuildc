@@ -13,14 +13,14 @@ def parse_args(args: list[str]) -> argparse.Namespace:
     ) 
     new_parser = subparser.add_parser("new", help="Creates a new project")
     new_parser.add_argument(
-        "name", 
-        help="Name of the project",        
+        "directory", 
+        help="Name of the project directory",        
         type=Path,
     )
     new_parser.add_argument(
         "--lib",
         action="store_true",
-        help="creates a library template",
+        help="creates a library template instead of a executable template.",
         default=False,
     )
 

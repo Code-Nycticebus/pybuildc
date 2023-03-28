@@ -10,19 +10,19 @@ def _create_file(file: Path, content: str) -> Path:
     return file
 
 def new_command(args) -> IOResultE:
-    args.name.mkdir(parents=True)
+    args.directory.mkdir(parents=True)
     _create_file(
-        Path(args.name, "src", args.name.with_suffix(".h").name), 
+        Path(args.directory, "src", args.directory.with_suffix(".h").name), 
         f"""\
 #pragma once
-#define LIBNAME "{args.name.name}" 
+#define LIBNAME "{args.directory.name}" 
 """
     )
     if not args.lib:
         _create_file(
-            Path(args.name, "src", "main.c"),
+            Path(args.directory, "src", "main.c"),
             f"""\
-#include "{args.name.name}.h"
+#include "{args.directory.name}.h"
 #include <stdio.h>
 int main(void) {{ printf("Project: " LIBNAME "\\n"); }}
 """    
@@ -30,26 +30,25 @@ int main(void) {{ printf("Project: " LIBNAME "\\n"); }}
 
 
     _create_file(
-        Path(args.name, "pybuildc.toml"), 
+        Path(args.directory, "pybuildc.toml"), 
         f"""\
 [project]
-name="{args.name.name}"
+name="{args.directory.name}"
 version="0.1.0"
 """
     )
 
     _create_file(
-        Path(args.name, "test", "main-test.c"), 
+        Path(args.directory, "test", "main-test.c"), 
         f"""\
-#include "{args.name.name}.h"
+#include "{args.directory.name}.h"
 #include <stdio.h>
 int main(void) {{ printf("Test: " LIBNAME "\\n"); }}
 """
     )
 
-
     return IOResultE.from_value(
-            args.name
+            args.directory
     )
 
 def build_command(args) -> IOResultE:
