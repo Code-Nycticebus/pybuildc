@@ -41,7 +41,6 @@ def compile_to_obj_file(cc: Compiler, project_directory: Path, obj_file: Path) -
     return cc.compile(
         [obj_file], convert_to_obj_file(project_directory, obj_file), obj=True
     )
-    
 
 
 @impure_safe
@@ -85,55 +84,55 @@ def collect_flags(
         (*(tuple(val[key]) for val in dependecies.values() if key in val),), tuple()
     )
 
+
+
+
 # TODO should return a tuple of Cmds!
-def build(directory: Path, debug: bool) -> IOResultE[tuple[Cmd, ...]]:
+def build(directory: Path, debug: bool) -> IOResultE[Path]:
     config_file = Path(directory, "pybuildc.toml")
     match load_config(config_file):
         case IOSuccess(c):
             config = c.unwrap()
         case e:
-            return e.map(lambda _: ())
+            return e.map(lambda _: Path())
 
     cache_mtime: Cache = load_cache(directory)
 
-    src_files = tuple(Path(directory, "src").rglob("*.c"))
-    include_files = tuple(Path(directory, "src").rglob("*.h"))
-    includes_changed = include_file_changed(cache_mtime, include_files)
-
-    dependecies = config.get("dependecies", tuple())
+    dependecies = config.get("dependecies", dict())
 
     cc = Compiler.create(
-        cc=config["project"].get("cc", "gcc"),
+        cc=config["project"].get("cc", "$(cc)"),
         libraries=collect_flags(dependecies, "lib"),
         includes=(
             f"-I{Path(directory, 'src').absolute()}",
-            *collect_flags(dependecies, "includes"),
+            *collect_flags(dependecies, "include"),
         ),
         debug=debug,
     )
 
-    obj_files = tuple(map(partial(convert_to_obj_file, directory), src_files))
+    exe_file = Path(directory, ".build", "bin", config["project"]["name"])
+    exe_file.parent.mkdir(parents=True, exist_ok=True)
 
+    res = Fold.collect_all(map(execute, builder(directory, cache_mtime, cc, exe_file)), IOSuccess(()))
+    match res:
+        case IOFailure():
+            return res
+
+    save_cache(directory, cache_mtime)
+    return IOSuccess(exe_file)
+
+
+def builder(directory: Path, cache_mtime: Dict[Path, float], cc: Compiler, exe_file: Path) -> tuple[Cmd, ...]:
+    src_files = tuple(Path(directory, "src").rglob("*.c"))
+    include_files = tuple(Path(directory, "src").rglob("*.h"))
+    includes_changed = include_file_changed(cache_mtime, include_files)
     compile_files = display(
         filter(
             lambda file: file_changed(cache_mtime, file) or includes_changed, src_files
         )
     )
+    build_commands = map(partial(compile_to_obj_file, cc, directory), compile_files)
 
-    res = Fold.collect(
-        map(partial(compile_to_obj_file, cc, directory), compile_files),
-        IOSuccess(()),
-    )
-    match res:
-        case IOFailure():
-            return res
+    obj_files = tuple(map(partial(convert_to_obj_file, directory), src_files))
 
-    exe_file = Path(directory, ".build", "bin", config["project"]["name"])
-    exe_file.parent.mkdir(parents=True, exist_ok=True)
-
-    match execute(cc.compile(obj_files, exe_file, warnings=False)):
-        case IOSuccess():
-            save_cache(directory, cache_mtime)
-            return IOSuccess(exe_file)
-        case e:
-            return e.map(lambda _: ())
+    return (*build_commands, cc.compile(obj_files, exe_file))
