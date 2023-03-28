@@ -6,13 +6,17 @@ Build system for the C language. For me a build system has to do a few things:
 3. change between Debug and Release flags
 4. Automatic testing
 
-### Install
+## Install
 ```terminal
 pip install .
 ```
 
 
-### Usage
+## Usage
+### Build
+When building a Project of a pybuildc.toml file has to be in the specified directory.
+default directory is the current working directory.
+
 ```terminal
-pybuildc build
+pybuildc build -d .
 ```
