@@ -5,6 +5,14 @@ from returns.io import IOResultE, IOFailure, IOSuccess
 
 
 def dev_import_module():
+    """for development i have to do this garbage!"""
+    try:
+        import pybuildc
+    except ModuleNotFoundError:
+        pass
+    else:
+        raise Exception(pybuildc, "module pybuildc actually exits! enter .dev-env")
+
     import sys
     from pathlib import Path
 
