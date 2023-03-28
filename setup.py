@@ -2,7 +2,6 @@ from setuptools import setup, find_packages
 
 setup(
     name="pybuildc",
-    version="0.1.0",
     description="A Build system for the C language",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
