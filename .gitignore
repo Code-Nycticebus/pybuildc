@@ -1,5 +1,4 @@
 .dev-env
-.test-env
 build
 .eggs
 pybuildc.egg-info
