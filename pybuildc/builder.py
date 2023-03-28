@@ -31,19 +31,17 @@ def convert_to_obj_file(project_directory, file: Path) -> Path:
         project_directory,
         ".build",
         "obj",
-        file.with_suffix(".o").relative_to(Path(project_directory, "src")),)
+        file.with_suffix(".o").relative_to(Path(project_directory, "src")),
+    )
     obj_file.parent.mkdir(parents=True, exist_ok=True)
     return obj_file
 
 
-def compile_to_obj_file(cc: Compiler, project_directory: Path, obj_file: Path):
-    return execute(
-        cc.compile(
-            [obj_file],
-            convert_to_obj_file(
-                project_directory,
-                obj_file),
-            obj=True))
+def compile_to_obj_file(cc: Compiler, project_directory: Path, obj_file: Path) -> Cmd:
+    return cc.compile(
+        [obj_file], convert_to_obj_file(project_directory, obj_file), obj=True
+    )
+    
 
 
 @impure_safe
@@ -65,18 +63,10 @@ def save_cache(directory: Path, cache_mtime: Cache):
     cache_file.write_bytes(pickle.dumps(cache_mtime))
 
 
-def include_file_changed(
-        cache_mtime: Cache,
-        include_files: Iterable[Path]) -> bool:
+def include_file_changed(cache_mtime: Cache, include_files: Iterable[Path]) -> bool:
     return any(
         tuple(
-            filter(
-                partial(
-                    file_changed,
-                    cache_mtime
-                ),
-                include_files
-            ),
+            filter(partial(file_changed, cache_mtime), include_files),
         )
     )
 
@@ -88,31 +78,21 @@ def file_changed(cache_mtime: Cache, file: Path) -> bool:
     return False
 
 
-
-def dependecie_libs(dependecies: Dict[str, Dict]) -> tuple[str, ...]:
+def collect_flags(
+    dependecies: Dict[str, Dict[str, list[str]]], key: str
+) -> tuple[str, ...]:
     return sum(
-        (
-            *(tuple(val["lib"]) for val in dependecies.values() if "lib" in val), 
-        ), 
-        tuple()
+        (*(tuple(val[key]) for val in dependecies.values() if key in val),), tuple()
     )
 
-
-def dependecie_includes(dependecies: Dict[str, Dict]) -> tuple[str, ...]:
-    return sum(
-        (
-            *(tuple(val["include"]) for val in dependecies.values() if "include" in val), 
-        ), 
-        tuple()
-    )
-
-def build(directory: Path, debug: bool) -> IOResultE[Path]:
+# TODO should return a tuple of Cmds!
+def build(directory: Path, debug: bool) -> IOResultE[tuple[Cmd, ...]]:
     config_file = Path(directory, "pybuildc.toml")
     match load_config(config_file):
         case IOSuccess(c):
             config = c.unwrap()
         case e:
-            return e.map(lambda _: Path())
+            return e.map(lambda _: ())
 
     cache_mtime: Cache = load_cache(directory)
 
@@ -124,20 +104,21 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
 
     cc = Compiler.create(
         cc=config["project"].get("cc", "gcc"),
-        libraries=dependecie_libs(dependecies),
-        includes=(f"-I{Path(directory, 'src').absolute()}", *dependecie_includes(dependecies))
-,
+        libraries=collect_flags(dependecies, "lib"),
+        includes=(
+            f"-I{Path(directory, 'src').absolute()}",
+            *collect_flags(dependecies, "includes"),
+        ),
         debug=debug,
     )
 
     obj_files = tuple(map(partial(convert_to_obj_file, directory), src_files))
 
-   # TODO filter src files to the ones that need recompiling
-
-    compile_files = display(filter(
-        lambda file: file_changed(cache_mtime, file) or includes_changed,
-        src_files
-    ))
+    compile_files = display(
+        filter(
+            lambda file: file_changed(cache_mtime, file) or includes_changed, src_files
+        )
+    )
 
     res = Fold.collect(
         map(partial(compile_to_obj_file, cc, directory), compile_files),
@@ -155,4 +136,4 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
             save_cache(directory, cache_mtime)
             return IOSuccess(exe_file)
         case e:
-            return e.map(lambda _: Path())
+            return e.map(lambda _: ())

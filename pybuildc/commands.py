@@ -19,7 +19,7 @@ def new_command(args) -> IOResultE:
         f"""\
 #pragma once
 #define LIBNAME "{args.directory.name}"
-"""
+""",
     )
     if not args.lib:
         _create_file(
@@ -28,7 +28,7 @@ def new_command(args) -> IOResultE:
 #include "{args.directory.name}.h"
 #include <stdio.h>
 int main(void) {{ printf("Project: " LIBNAME "\\n"); }}
-"""
+""",
         )
 
     _create_file(
@@ -37,7 +37,7 @@ int main(void) {{ printf("Project: " LIBNAME "\\n"); }}
 [project]
 name="{args.directory.name}"
 version="0.1.0"
-"""
+""",
     )
 
     _create_file(
@@ -46,12 +46,10 @@ version="0.1.0"
 #include "{args.directory.name}.h"
 #include <stdio.h>
 int main(void) {{ printf("Test: " LIBNAME "\\n"); }}
-"""
+""",
     )
 
-    return IOResultE.from_value(
-        args.directory
-    )
+    return IOResultE.from_value(args.directory)
 
 
 def build_command(args) -> IOResultE:
@@ -59,11 +57,8 @@ def build_command(args) -> IOResultE:
 
 
 def run_command(args) -> IOResultE:
-    return build(
-        args.directory,
-        not args.release).bind(
-        lambda exe: impure_safe(
-            subprocess.run)(
-                exe,
-                check=True)).map(
-                    lambda process: process.args)
+    return (
+        build(args.directory, not args.release)
+        .bind(lambda exe: impure_safe(subprocess.run)(exe, check=True))
+        .map(lambda process: process.args)
+    )
