@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 
-def parse_args(args: list[str]) -> argparse.Namespace:
+def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
     parser = argparse.ArgumentParser(
         description="A build system for the c language",
     )
@@ -56,4 +56,4 @@ def parse_args(args: list[str]) -> argparse.Namespace:
         action="store_true",
     )
 
-    return parser.parse_args(args)
+    return parser.parse_known_args(args)

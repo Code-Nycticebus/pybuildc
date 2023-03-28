@@ -7,7 +7,6 @@ from returns.io import IOResultE, IOFailure, IOSuccess
 def dev_import_module():
     import sys
     from pathlib import Path
-
     sys.path.append(str(Path(__file__).parent.parent))
 
 
@@ -17,12 +16,10 @@ if __name__ == "__main__":
 from pybuildc.args import parse_args
 from pybuildc.commands import build_command, new_command, run_command
 
-
 # TODO error handling
 def error(e: Exception) -> int:
     match e:
         case FileNotFoundError():
-            # TODO args[0] because of custom error
             print(f"File not found: {e.filename}")
             return 1
         case CalledProcessError():
@@ -32,14 +29,14 @@ def error(e: Exception) -> int:
             raise e
 
 
-def pybuildc(args) -> IOResultE:
-    match args.action:
+def pybuildc(commands, argv) -> IOResultE:
+    match commands.action:
         case "new":
-            return new_command(args)
+            return new_command(commands)
         case "build":
-            return build_command(args)
+            return build_command(commands)
         case "run":
-            return run_command(args)
+            return run_command(commands, argv)
         case _:
             pass
 
@@ -47,11 +44,12 @@ def pybuildc(args) -> IOResultE:
 
 
 def main() -> int:
-    args = parse_args(sys.argv[1:])
+    args, argv = parse_args(sys.argv[1:])
 
-    match pybuildc(args):
+    match pybuildc(args, argv):
         case IOSuccess(r):
-            print(r.unwrap())
+            print(r)
+            return 0
         case IOFailure(e):
             return error(e.failure())
         case _:

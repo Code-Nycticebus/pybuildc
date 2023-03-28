@@ -56,9 +56,10 @@ def build_command(args) -> IOResultE:
     return build(args.directory, not args.release)
 
 
-def run_command(args) -> IOResultE:
+def run_command(args, argv) -> IOResultE:
     return (
         build(args.directory, not args.release)
-        .bind(lambda exe: impure_safe(subprocess.run)(exe, check=True))
+        .map(str)
+        .bind(lambda exe: impure_safe(subprocess.run)((exe, *argv), check=True))
         .map(lambda process: process.args)
     )
