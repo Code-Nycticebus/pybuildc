@@ -1,6 +1,9 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Dict
+
+from pybuildc.domain.entities import BuildConfig, BuildFiles
 
 
 Args = tuple[str, ...]
@@ -74,3 +77,15 @@ class Compiler:
             includes=includes,
             libraries=libraries,
         )
+
+@dataclass
+class FileMtimeCache:
+    cache: Dict[Path, float]
+    def __call__(self, file: Path) -> bool:
+        return True
+
+@dataclass(frozen=True)
+class BuildContext:
+    config: BuildConfig
+    cache: FileMtimeCache
+    files: BuildFiles
