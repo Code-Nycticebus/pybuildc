@@ -4,6 +4,7 @@ import pickle
 import subprocess
 from typing import Dict
 from concurrent import futures
+import itertools
 
 import toml
 
@@ -86,18 +87,19 @@ def collect_flags(
     dependecies: Dict[str, Dict[str, list[str]]], key: str
 ) -> tuple[str, ...]:
     """Collects flags from dictionary structure"""
-    return sum(
-        (*(tuple(val[key]) for val in dependecies.values() if key in val),), tuple()
-    )
+    return tuple(itertools.chain(
+        *(val[key] for val in dependecies.values() if key in val),
+    ))
+
 
 
 def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
     with futures.ProcessPoolExecutor() as executor:
-        done, _ = futures.wait(
+        commands, _ = futures.wait(
                (executor.submit(execute, cmd) for cmd in cmds)
         )
         return Fold.collect(
-            map(futures.Future.result, done),
+            map(futures.Future.result, commands),
             IOSuccess(()),
         ) or IOFailure(Exception("Somehow process_cmds failed!"))
 
