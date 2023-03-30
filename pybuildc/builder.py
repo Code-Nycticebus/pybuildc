@@ -11,7 +11,7 @@ import toml
 from returns.io import IOResultE, IOFailure, IOSuccess, impure_safe
 from returns.iterables import Fold
 from returns.curry import partial
-from pybuildc.domain.entities import BuildConfig, BuildFiles, Dependecies
+from pybuildc.domain.entities import BuildConfig, BuildFiles, Dependencies
 
 from pybuildc.domain.services import Compiler, Cmd, BuildContext
 
@@ -85,12 +85,12 @@ def file_changed(cache_mtime: Cache, file: Path) -> bool:
 
 
 def collect_flags(
-    dependecies: Dict[str, Dict[str, list[str]]], key: str
+    dependencies: Dict[str, Dict[str, list[str]]], key: str
 ) -> tuple[str, ...]:
     """Collects flags from dictionary structure"""
     return tuple(
         itertools.chain(
-            *(val[key] for val in dependecies.values() if key in val),
+            *(val[key] for val in dependencies.values() if key in val),
         )
     )
 
@@ -119,20 +119,20 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
 
     build_directory = Path(directory, ".build", target)
 
-    dependecy_config = config.get("dependecies", dict())
-    dependecies = Dependecies(
+    dependency_config = config.get("dependencies", dict())
+    dependencies = Dependencies(
         name=directory.name,
         version=config.get("version", "0.0.0"),
-        inc_flags=collect_flags(dependecy_config, "include"),
-        lib_flags=collect_flags(dependecy_config, "lib"),
+        inc_flags=collect_flags(dependency_config, "include"),
+        lib_flags=collect_flags(dependency_config, "lib"),
     )
 
     cc = Compiler.create(
         cc=config["project"].get("cc", "gcc"),
-        libraries=dependecies.inc_flags,
+        libraries=dependencies.inc_flags,
         includes=(
             f"-I{Path(directory, 'src').absolute()}",
-            *dependecies.lib_flags,
+            *dependencies.lib_flags,
         ),
         debug=debug,
     )
@@ -154,7 +154,7 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
     build_config = BuildConfig(
         target,
         directory.name,
-        dependecies,
+        dependencies,
     )
 
     context = BuildContext(

@@ -16,7 +16,7 @@ class BuildFiles:
     include_files: tuple[Path, ...]
 
 @dataclass(frozen=True)
-class Dependecies:
+class Dependencies:
     name: str
     version: str
     lib_flags: tuple[str]
@@ -28,6 +28,6 @@ class Dependecies:
 class BuildConfig:
     target: str
     project_name: str
-    dependecies: Dependecies
+    dependecies: Dependencies
     
 
