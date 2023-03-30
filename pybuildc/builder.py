@@ -17,6 +17,7 @@ from pybuildc.domain.services import Compiler, Cmd, BuildContext
 
 Cache = Dict[Path, float]
 
+
 def display(files: Iterable[Path]):
     for file in files:
         print(f"  [BUILDING] {file}")
@@ -87,21 +88,20 @@ def collect_flags(
     dependecies: Dict[str, Dict[str, list[str]]], key: str
 ) -> tuple[str, ...]:
     """Collects flags from dictionary structure"""
-    return tuple(itertools.chain(
-        *(val[key] for val in dependecies.values() if key in val),
-    ))
-
+    return tuple(
+        itertools.chain(
+            *(val[key] for val in dependecies.values() if key in val),
+        )
+    )
 
 
 def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
     with futures.ProcessPoolExecutor() as executor:
-        commands, _ = futures.wait(
-               (executor.submit(execute, cmd) for cmd in cmds)
-        )
+        commands, _ = futures.wait((executor.submit(execute, cmd) for cmd in cmds))
         return Fold.collect(
-            map(futures.Future.result, commands),
+            map(lambda p: p.result(), commands),
             IOSuccess(()),
-        ) or IOFailure(Exception("Somehow process_cmds failed!"))
+        ) or IOFailure(Exception("process_cmds failed in unkown ways"))
 
 
 def build(directory: Path, debug: bool) -> IOResultE[Path]:
@@ -121,10 +121,10 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
 
     dependecy_config = config.get("dependecies", dict())
     dependecies = Dependecies(
-        directory.name, 
-        config.get("version", "0.0.0"),
-        collect_flags(dependecy_config, "include"),
-        collect_flags(dependecy_config, "lib"),
+        name=directory.name,
+        version=config.get("version", "0.0.0"),
+        inc_flags=collect_flags(dependecy_config, "include"),
+        lib_flags=collect_flags(dependecy_config, "lib"),
     )
 
     cc = Compiler.create(
@@ -158,9 +158,9 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
     )
 
     context = BuildContext(
-        config=build_config,
-        cache=cache_mtime,
-        files=build_files, 
+        build_config,
+        cache_mtime,
+        build_files,
     )
 
     obj_cmds, binary_cmd = builder(context, cc, exe_file)
@@ -184,17 +184,23 @@ def builder(
     cc: Compiler,
     exe_file: Path,
 ) -> tuple[tuple[Cmd, ...], Cmd]:
-    includes_changed = include_file_changed(
-        context.cache, 
-        context.files.include_files
-    )
+    includes_changed = include_file_changed(context.cache, context.files.include_files)
     compile_files = display(
         filter(
-            lambda file: file_changed(context.cache, file) or includes_changed, context.files.src_files
+            lambda file: file_changed(context.cache, file) or includes_changed,
+            context.files.src_files,
         )
     )
     obj_cmds = tuple(
-        map(partial(compile_to_obj_file, cc, context.files.directory, context.config.target), compile_files)
+        map(
+            partial(
+                compile_to_obj_file, cc, context.files.directory, context.config.target
+            ),
+            compile_files,
+        )
     )
-    obj_files = map(partial(convert_to_obj_file, context.files.directory, context.config.target), context.files.src_files)
+    obj_files = map(
+        partial(convert_to_obj_file, context.files.directory, context.config.target),
+        context.files.src_files,
+    )
     return obj_cmds, cc.compile(obj_files, exe_file)
