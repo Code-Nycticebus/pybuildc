@@ -78,11 +78,8 @@ class Compiler:
             libraries=libraries,
         )
 
-@dataclass
-class FileMtimeCache:
-    cache: Dict[Path, float]
-    def __call__(self, file: Path) -> bool:
-        return True
+
+FileMtimeCache = Dict[Path, float]
 
 @dataclass(frozen=True)
 class BuildContext:

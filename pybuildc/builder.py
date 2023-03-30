@@ -10,11 +10,11 @@ import toml
 from returns.io import IOResultE, IOFailure, IOSuccess, impure_safe
 from returns.iterables import Fold
 from returns.curry import partial
+from pybuildc.domain.entities import BuildConfig, BuildFiles, Dependecies
 
-from pybuildc.domain.services import Compiler, Cmd
+from pybuildc.domain.services import Compiler, Cmd, BuildContext
 
 Cache = Dict[Path, float]
-
 
 def display(files: Iterable[Path]):
     for file in files:
@@ -93,13 +93,11 @@ def collect_flags(
 
 def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
     with futures.ProcessPoolExecutor() as executor:
+        done, _ = futures.wait(
+               (executor.submit(execute, cmd) for cmd in cmds)
+        )
         return Fold.collect(
-            (
-                f.result()
-                for f in futures.as_completed(
-                    tuple(executor.submit(execute, cmd) for cmd in cmds)
-                )
-            ),
+            map(futures.Future.result, done),
             IOSuccess(()),
         ) or IOFailure(Exception("Somehow process_cmds failed!"))
 
@@ -117,14 +115,22 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
 
     cache_mtime: Cache = load_cache(build_directory)
 
-    dependecies = config.get("dependecies", dict())
+    build_directory = Path(directory, ".build", target)
+
+    dependecy_config = config.get("dependecies", dict())
+    dependecies = Dependecies(
+        directory.name, 
+        config.get("version", "0.0.0"),
+        collect_flags(dependecy_config, "include"),
+        collect_flags(dependecy_config, "lib"),
+    )
 
     cc = Compiler.create(
-        cc=config["project"].get("cc", "$(cc)"),
-        libraries=collect_flags(dependecies, "lib"),
+        cc=config["project"].get("cc", "gcc"),
+        libraries=dependecies.inc_flags,
         includes=(
             f"-I{Path(directory, 'src').absolute()}",
-            *collect_flags(dependecies, "include"),
+            *dependecies.lib_flags,
         ),
         debug=debug,
     )
@@ -136,7 +142,26 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
     )
     exe_file.parent.mkdir(parents=True, exist_ok=True)
 
-    obj_cmds, binary_cmd = builder(directory, cache_mtime, cc, exe_file, target)
+    build_files = BuildFiles(
+        directory,
+        Path(directory, ".build", target),
+        tuple(Path(directory, "src").rglob("*.c")),
+        tuple(Path(directory, "src").rglob("*.h")),
+    )
+
+    build_config = BuildConfig(
+        target,
+        directory.name,
+        dependecies,
+    )
+
+    context = BuildContext(
+        config=build_config,
+        cache=cache_mtime,
+        files=build_files, 
+    )
+
+    obj_cmds, binary_cmd = builder(context, cc, exe_file)
 
     res: IOResultE[Iterable[Cmd]] = process_cmds(obj_cmds)
     match res:
@@ -153,22 +178,21 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
 
 
 def builder(
-    directory: Path,
-    cache_mtime: Dict[Path, float],
+    context: BuildContext,
     cc: Compiler,
     exe_file: Path,
-    target: str,
 ) -> tuple[tuple[Cmd, ...], Cmd]:
-    src_files = tuple(Path(directory, "src").rglob("*.c"))
-    include_files = tuple(Path(directory, "src").rglob("*.h"))
-    includes_changed = include_file_changed(cache_mtime, include_files)
+    includes_changed = include_file_changed(
+        context.cache, 
+        context.files.include_files
+    )
     compile_files = display(
         filter(
-            lambda file: file_changed(cache_mtime, file) or includes_changed, src_files
+            lambda file: file_changed(context.cache, file) or includes_changed, context.files.src_files
         )
     )
     obj_cmds = tuple(
-        map(partial(compile_to_obj_file, cc, directory, target), compile_files)
+        map(partial(compile_to_obj_file, cc, context.files.directory, context.config.target), compile_files)
     )
-    obj_files = map(partial(convert_to_obj_file, directory, target), src_files)
+    obj_files = map(partial(convert_to_obj_file, context.files.directory, context.config.target), context.files.src_files)
     return obj_cmds, cc.compile(obj_files, exe_file)

@@ -1,13 +1,12 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
 
 
 
 @dataclass(frozen=True)
 class CompileCommand:
     outfile: Path
-    infile: tuple[Path, ...]
+    infiles: tuple[Path, ...]
     
 @dataclass(frozen=True)
 class BuildFiles:
@@ -27,6 +26,7 @@ class Dependecies:
 
 @dataclass(frozen=True)
 class BuildConfig:
+    target: str
     project_name: str
     dependecies: Dependecies
     
