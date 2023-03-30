@@ -17,6 +17,7 @@ RELEASE_WARNINGS: Args = (
 DEBUG_WARNINGS: Args = (
     "-Wall",
     "-Wextra",
+    "-Werror",
     "-Wpedantic",
     "-Werror",
     "-Wshadow",
@@ -55,7 +56,7 @@ class Compiler:
             self.cc,
             *self.includes,
             *map(str, files),
-            *(self.warnings if not warnings else ()),
+            *(self.warnings if warnings else ()),
             *self.libraries,
             *self.flags,
             *(("-c", ) if obj else ()),
