@@ -85,14 +85,15 @@ def file_changed(cache_mtime: Cache, file: Path) -> bool:
 
 
 def collect_flags(
-    dependencies: Dict[str, Dict[str, list[str]]], key: str
+    dependency: Dict[str, Dict[str, Iterable[str]]], key: str
 ) -> tuple[str, ...]:
     """Collects flags from dictionary structure"""
     return tuple(
         itertools.chain(
-            *(val[key] for val in dependencies.values() if key in val),
-        )
+            *map(lambda val: val[key], dependency.values())
+        ),
     )
+    
 
 
 def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
@@ -117,12 +118,17 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
 
     cache_mtime: Cache = load_cache(build_directory)
 
-    build_directory = Path(directory, ".build", target)
+    build_files = BuildFiles(
+        directory,
+        Path(directory, ".build", target),
+        tuple(Path(directory, "src").rglob("*.c")),
+        tuple(Path(directory, "src").rglob("*.h")),
+    )
 
     dependency_config = config.get("dependencies", dict())
+
+
     dependencies = Dependencies(
-        name=directory.name,
-        version=config.get("version", "0.0.0"),
         inc_flags=collect_flags(dependency_config, "include"),
         lib_flags=collect_flags(dependency_config, "lib"),
     )
@@ -143,13 +149,6 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
         f"""{config["project"]["name"]}-{target}-{config['project']['version']}""",
     )
     exe_file.parent.mkdir(parents=True, exist_ok=True)
-
-    build_files = BuildFiles(
-        directory,
-        Path(directory, ".build", target),
-        tuple(Path(directory, "src").rglob("*.c")),
-        tuple(Path(directory, "src").rglob("*.h")),
-    )
 
     build_config = BuildConfig(
         target,

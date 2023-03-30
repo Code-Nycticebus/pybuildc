@@ -17,8 +17,6 @@ class BuildFiles:
 
 @dataclass(frozen=True)
 class Dependencies:
-    name: str
-    version: str
     lib_flags: tuple[str]
     inc_flags: tuple[str]
 
