@@ -90,15 +90,16 @@ def collect_flags(
     """Collects flags from dictionary structure"""
     return tuple(
         itertools.chain(
-            *map(lambda val: val[key], dependency.values())
+            *map(lambda val: val.get(key, ()), dependency.values())
         ),
     )
     
 
 
 def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
+    # return Fold.collect(execute(cmd) for cmd in cmds) or IOFailure(Exception("DWADWA"))
     with futures.ProcessPoolExecutor() as executor:
-        commands, _ = futures.wait((executor.submit(execute, cmd) for cmd in cmds))
+        commands = futures.as_completed((executor.submit(execute, cmd) for cmd in cmds))
         return Fold.collect(
             map(lambda p: p.result(), commands),
             IOSuccess(()),
@@ -127,10 +128,16 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
 
     dependency_config = config.get("dependencies", dict())
 
+    build_config = BuildConfig(
+        target,
+        config['project']['version'],
+        directory.name,
+        dependency_config,
+    )
 
     dependencies = Dependencies(
-        inc_flags=collect_flags(dependency_config, "include"),
-        lib_flags=collect_flags(dependency_config, "lib"),
+        inc_flags=collect_flags(build_config.dependencies, "include"),
+        lib_flags=collect_flags(build_config.dependencies, "lib"),
     )
 
     cc = Compiler.create(
@@ -143,26 +150,18 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
         debug=debug,
     )
 
-    exe_file = Path(
-        build_directory,
-        "bin",
-        f"""{config["project"]["name"]}-{target}-{config['project']['version']}""",
-    )
-    exe_file.parent.mkdir(parents=True, exist_ok=True)
-
-    build_config = BuildConfig(
-        target,
-        directory.name,
-        dependencies,
-    )
-
     context = BuildContext(
         build_config,
         cache_mtime,
         build_files,
     )
-
-    obj_cmds, binary_cmd = builder(context, cc, exe_file)
+    exe_file = Path(
+        context.files.build_directory,
+        "bin",
+        f"""{build_config.project_name}-{target}-{config['project']['version']}""",
+    )
+    exe_file.parent.mkdir(parents=True, exist_ok=True)
+    *obj_cmds, binary_cmd = builder(context, cc, exe_file)
 
     res: IOResultE[Iterable[Cmd]] = process_cmds(obj_cmds)
     match res:
@@ -182,7 +181,7 @@ def builder(
     context: BuildContext,
     cc: Compiler,
     exe_file: Path,
-) -> tuple[tuple[Cmd, ...], Cmd]:
+) -> tuple[Cmd, ...]:
     includes_changed = include_file_changed(context.cache, context.files.include_files)
     compile_files = display(
         filter(
@@ -202,4 +201,4 @@ def builder(
         partial(convert_to_obj_file, context.files.directory, context.config.target),
         context.files.src_files,
     )
-    return obj_cmds, cc.compile(obj_files, exe_file)
+    return (*obj_cmds, cc.compile(obj_files, exe_file))

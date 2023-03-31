@@ -1,5 +1,7 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Dict
 
 
 
@@ -25,7 +27,8 @@ class Dependencies:
 @dataclass(frozen=True)
 class BuildConfig:
     target: str
+    version: str
     project_name: str
-    dependecies: Dependencies
+    dependencies: Dict[str, Dict[str, Iterable[str]]] 
     
 
