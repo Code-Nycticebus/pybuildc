@@ -2,13 +2,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
-
-
-
-@dataclass(frozen=True)
-class CompileCommand:
-    outfile: Path
-    infiles: tuple[Path, ...]
     
 @dataclass(frozen=True)
 class BuildFiles:
@@ -21,8 +14,6 @@ class BuildFiles:
 class Dependencies:
     lib_flags: tuple[str]
     inc_flags: tuple[str]
-
-
 
 @dataclass(frozen=True)
 class BuildConfig:

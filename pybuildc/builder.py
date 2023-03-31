@@ -89,15 +89,11 @@ def collect_flags(
 ) -> tuple[str, ...]:
     """Collects flags from dictionary structure"""
     return tuple(
-        itertools.chain(
-            *map(lambda val: val.get(key, ()), dependency.values())
-        ),
+        itertools.chain(*map(lambda val: val.get(key, tuple()), dependency.values())),
     )
-    
 
 
 def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
-    # return Fold.collect(execute(cmd) for cmd in cmds) or IOFailure(Exception("DWADWA"))
     with futures.ProcessPoolExecutor() as executor:
         commands = futures.as_completed((executor.submit(execute, cmd) for cmd in cmds))
         return Fold.collect(
@@ -130,7 +126,7 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
 
     build_config = BuildConfig(
         target,
-        config['project']['version'],
+        config["project"]["version"],
         directory.name,
         dependency_config,
     )
