@@ -1,12 +1,13 @@
 import argparse
 from pathlib import Path
-from pybuildc.__version__ import version_tuple
+from pybuildc.__version__ import __version__
+
 
 def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
     parser = argparse.ArgumentParser(
         description="A build system for the c language",
     )
-    parser.add_argument('-v', '--version', action='version', version=f"0.{version_tuple[0]}.{version_tuple[1]}")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
 
     subparser = parser.add_subparsers(
         dest="action",

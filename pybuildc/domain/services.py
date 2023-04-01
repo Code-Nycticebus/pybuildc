@@ -9,10 +9,7 @@ from pybuildc.domain.entities import BuildConfig, BuildFiles
 Args = tuple[str, ...]
 Cmd = tuple[str, ...]
 
-RELEASE_WARNINGS: Args = (
-    "-Wall",
-    "-Wpedantic"
-)
+RELEASE_WARNINGS: Args = ("-Wall", "-Wpedantic")
 
 DEBUG_WARNINGS: Args = (
     "-Wall",
@@ -30,12 +27,10 @@ DEBUG_FLAGS: Args = (
     "-ggdb",
     "-fsanitize=address,undefined,leak",
     "-fno-omit-frame-pointer",
-    "-fPIC"
+    "-fPIC",
 )
 
-RELEASE_FLAGS: Args = (
-    "-O2",
-)
+RELEASE_FLAGS: Args = ("-O2",)
 
 
 @dataclass(frozen=True)
@@ -47,11 +42,12 @@ class Compiler:
     libraries: tuple[str]
 
     def compile(
-            self,
-            files: Iterable[Path],
-            output: Path,
-            warnings: bool = True,
-            obj: bool = False) -> Cmd:
+        self,
+        files: Iterable[Path],
+        output: Path,
+        warnings: bool = True,
+        obj: bool = False,
+    ) -> Cmd:
         return (
             self.cc,
             *self.includes,
@@ -59,18 +55,15 @@ class Compiler:
             *(self.warnings if warnings else ()),
             *self.libraries,
             *self.flags,
-            *(("-c", ) if obj else ()),
+            *(("-c",) if obj else ()),
             "-o",
             str(output),
         )
 
     @classmethod
     def create(
-            cls,
-            cc: str,
-            includes: tuple[str, ...],
-            libraries: tuple[str, ...],
-            debug: bool):
+        cls, cc: str, includes: tuple[str, ...], libraries: tuple[str, ...], debug: bool
+    ):
         return cls(
             cc=cc,
             warnings=DEBUG_WARNINGS if debug else RELEASE_WARNINGS,
@@ -81,6 +74,7 @@ class Compiler:
 
 
 FileMtimeCache = Dict[Path, float]
+
 
 @dataclass(frozen=True)
 class BuildContext:
