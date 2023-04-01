@@ -2,6 +2,7 @@ from subprocess import CalledProcessError
 import sys
 
 from returns.io import IOResultE, IOFailure, IOSuccess
+from returns.result import Failure, Success
 
 
 def dev_import_module():
@@ -57,16 +58,13 @@ def main() -> int:
     args, argv = parse_args(sys.argv[1:])
 
     match pybuildc(args, argv):
-        case IOSuccess(r):
-            print(r)
-            return 0
-        case IOFailure(e):
-            return error(e.failure())
-        case e:
-            print(e)
-            pass
+        case IOSuccess(Success(returncode)):
+            return returncode
+        case IOFailure(Failure(e)):
+            return error(e)
+        case unknown:
+            raise ValueError(f"pybuildc should return a 'IOResultE' instead got {type(unknown)}")
 
-    return 0
 
 
 # Is run in development only

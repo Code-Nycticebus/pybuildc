@@ -52,14 +52,15 @@ int main(void) {{ printf("Test: " LIBNAME "\\n"); }}
     return IOResultE.from_value(args.directory)
 
 
-def build_command(args) -> IOResultE:
-    return build(args.directory, not args.release)
+def build_command(args) -> IOResultE[int]:
+    return build(args.directory, not args.release).map(lambda _: 0)
 
 
-def run_command(args, argv) -> IOResultE:
+def run_command(args, argv) -> IOResultE[int]:
     return (
         build(args.directory, not args.release)
-        .map(str)
+        .map(lambda context: str(context.bin_file))
         .bind(lambda exe: impure_safe(subprocess.run)((exe, *argv), check=True))
-        .map(lambda process: process.args)
+        .alt(lambda p: Exception("Not an exe project") if isinstance(p, FileNotFoundError) else p)
+        .map(lambda process: process.returncode)
     )
