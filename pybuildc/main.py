@@ -61,7 +61,7 @@ def main() -> int:
         case IOFailure(Failure(e)):
             return error(e)
         case unknown:
-            raise ValueError(
+            raise TypeError(
                 f"pybuildc should return a 'IOResultE' instead got {type(unknown)}"
             )
 
