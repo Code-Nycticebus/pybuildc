@@ -8,6 +8,8 @@ from typing import Dict
 class BuildFiles:
     directory: Path
     build_directory: Path
+    cache: Path
+    config: Path
     src_files: tuple[Path, ...]
     include_files: tuple[Path, ...]
 

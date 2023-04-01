@@ -23,6 +23,10 @@ def display(files: Iterable[Path]):
         print(f"  \033[93m[BUILDING]\033[0m {file}")
         yield file
 
+def get_file(*args) -> Path:
+    path = Path(*args)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path                    
 
 @impure_safe
 def execute(cmd: Cmd) -> Cmd:
@@ -55,18 +59,14 @@ def load_config(config_file: Path):
     return toml.loads(config_file.read_text())
 
 
-def load_cache(directory: Path) -> Dict[Path, float]:
-    cache_file = Path(directory, "cache_mtime.pkl")
-    if not cache_file.exists():
+def load_cache(file: Path) -> Dict[Path, float]:
+    if not file.exists():
         return dict()
+    return pickle.loads(file.read_bytes())
 
-    return pickle.loads(cache_file.read_bytes())
 
-
-def save_cache(directory: Path, cache_mtime: Dict[Path, float]):
-    cache_file = Path(directory, "cache_mtime.pkl")
-    cache_file.parent.mkdir(parents=True, exist_ok=True)
-    cache_file.write_bytes(pickle.dumps(cache_mtime))
+def save_cache(file: Path, cache_mtime: Dict[Path, float]):
+    file.write_bytes(pickle.dumps(cache_mtime))
 
 
 def include_file_changed(
@@ -80,8 +80,8 @@ def include_file_changed(
 
 
 def file_changed(cache_mtime: Dict[Path, float], file: Path) -> bool:
-    if cache_mtime.get(file, 0.0) < (t := file.stat().st_mtime):
-        cache_mtime[file] = t
+    if cache_mtime.get(file, 0.0) < (mtime := file.stat().st_mtime):
+        cache_mtime[file] = mtime
         return True
     return False
 
@@ -106,22 +106,23 @@ def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
 
 def create_context(directory: Path, debug: bool) -> IOResultE[BuildContext]:
     target = "debug" if debug else "release"
-    build_directory = Path(directory, ".build", target)
+    build_directory = get_file(directory, ".build", target) 
 
-    config_file = Path(directory, "pybuildc.toml")
-    match load_config(config_file):
+    build_files = BuildFiles(
+        directory = directory,
+        build_directory = Path(directory, ".build", target),
+        src_files= tuple(Path(directory, "src").rglob("*.c")),
+        include_files=tuple(Path(directory, "src").rglob("*.h")),
+        cache = get_file(build_directory, "file_mtime.pickle"),
+        config = get_file(directory, "pybuildc.toml"),
+    )
+    match load_config(build_files.config):
         case IOSuccess(c):
             config = c.unwrap()
         case e:
             return e  # type: ignore
-    cache_mtime: Dict[Path, float] = load_cache(build_directory)
 
-    build_files = BuildFiles(
-        directory,
-        Path(directory, ".build", target),
-        tuple(Path(directory, "src").rglob("*.c")),
-        tuple(Path(directory, "src").rglob("*.h")),
-    )
+    cache_mtime: Dict[Path, float] = load_cache(build_files.cache)
 
     dependency_config = config.get("dependencies", dict())
 
@@ -156,13 +157,11 @@ def create_context(directory: Path, debug: bool) -> IOResultE[BuildContext]:
 
 
 def create_bin_path(build_directory: Path, config: BuildConfig) -> Path:
-    exe_file = Path(
+    return get_file(
         build_directory,
         "bin",
         f"""{config.project_name}-{config.target}-{config.version}""",
     )
-    exe_file.parent.mkdir(parents=True, exist_ok=True)
-    return exe_file
 
 
 def builder(context: BuildContext) -> IOResultE[BuildContext]:
@@ -187,7 +186,7 @@ def builder(context: BuildContext) -> IOResultE[BuildContext]:
 
 def build(directory: Path, debug: bool) -> IOResultE[BuildContext]:
     def save_cache_with_context(context: BuildContext) -> IOResultE[BuildContext]:
-        save_cache(context.files.build_directory, context.cache)
+        save_cache(context.files.cache, context.cache)
         return IOSuccess(context)
 
     return flow(
