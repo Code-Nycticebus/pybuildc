@@ -217,20 +217,29 @@ def create_compile_commands(
             ),
             compile_files,
         ),
-        lambda obj_commands: (obj_commands,  map(
-                    partial(
-                        convert_to_obj_file,
-                        context.files.directory,
-                        context.config.target,
-                    ),
-                    context.files.src_files,
-                )),
-        lambda commands_and_files:(
+        lambda obj_commands: (
+            obj_commands,
+            map(
+                partial(
+                    convert_to_obj_file,
+                    context.files.directory,
+                    context.config.target,
+                ),
+                context.files.src_files,
+            ),
+        ),
+        lambda commands_and_files: (
             *commands_and_files[0],
             context.cc.compile(
                 commands_and_files[1],
                 context.bin_file,
-                ) if Path(context.files.directory, "src", "main.c").exists() else 
-                    ("ar", "rcs", str(Path(context.bin_file)) + ".a", *commands_and_files[1])
+            )
+            if Path(context.files.directory, "src", "main.c").exists()
+            else (
+                "ar",
+                "rcs",
+                str(Path(context.bin_file)) + ".a",
+                *commands_and_files[1],
+            ),
         ),
     )

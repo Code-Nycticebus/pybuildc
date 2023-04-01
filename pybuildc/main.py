@@ -52,8 +52,6 @@ def pybuildc(commands, argv) -> IOResultE[int]:
             return IOFailure(Exception("argument not implemented"))
 
 
-    
-
 def main() -> int:
     args, argv = parse_args(sys.argv[1:])
 
@@ -63,8 +61,9 @@ def main() -> int:
         case IOFailure(Failure(e)):
             return error(e)
         case unknown:
-            raise ValueError(f"pybuildc should return a 'IOResultE' instead got {type(unknown)}")
-
+            raise ValueError(
+                f"pybuildc should return a 'IOResultE' instead got {type(unknown)}"
+            )
 
 
 # Is run in development only

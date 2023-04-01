@@ -61,6 +61,10 @@ def run_command(args, argv) -> IOResultE[int]:
         build(args.directory, not args.release)
         .map(lambda context: str(context.bin_file))
         .bind(lambda exe: impure_safe(subprocess.run)((exe, *argv), check=True))
-        .alt(lambda p: Exception("Not an exe project") if isinstance(p, FileNotFoundError) else p)
+        .alt(
+            lambda p: Exception("Not an exe project")
+            if isinstance(p, FileNotFoundError)
+            else p
+        )
         .map(lambda process: process.returncode)
     )
