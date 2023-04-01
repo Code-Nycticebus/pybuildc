@@ -20,7 +20,7 @@ from pybuildc.domain.services import Compiler, Cmd, BuildContext
 
 def display(files: Iterable[Path]):
     for file in files:
-        print(f"  [BUILDING] {file}")
+        print(f"  \033[93m[BUILDING]\033[0m {file}")
         yield file
 
 
