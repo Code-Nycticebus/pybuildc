@@ -12,7 +12,7 @@ def _create_file(file: Path, content: str) -> Path:
     return file
 
 
-def new_command(args) -> IOResultE:
+def new_command(args) -> IOResultE[int]:
     args.directory.mkdir(parents=True)
     _create_file(
         Path(args.directory, "src", args.directory.with_suffix(".h").name),
@@ -49,7 +49,7 @@ int main(void) {{ printf("Test: " LIBNAME "\\n"); }}
 """,
     )
 
-    return IOResultE.from_value(args.directory)
+    return IOResultE.from_value(0)
 
 
 def build_command(args) -> IOResultE[int]:

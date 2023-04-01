@@ -40,7 +40,7 @@ def error(e: Exception) -> int:
             raise e
 
 
-def pybuildc(commands, argv) -> IOResultE:
+def pybuildc(commands, argv) -> IOResultE[int]:
     match commands.action:
         case "new":
             return new_command(commands)
@@ -49,10 +49,10 @@ def pybuildc(commands, argv) -> IOResultE:
         case "run":
             return run_command(commands, argv)
         case _:
-            pass
+            return IOFailure(Exception("argument not implemented"))
 
-    return IOFailure(Exception("argument not implemented"))
 
+    
 
 def main() -> int:
     args, argv = parse_args(sys.argv[1:])
