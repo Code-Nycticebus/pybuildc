@@ -132,17 +132,12 @@ def create_context(directory: Path, debug: bool) -> IOResultE[BuildContext]:
         dependency_config,
     )
 
-    dependencies = Dependencies(
-        inc_flags=collect_flags(build_config.dependencies, "include"),
-        lib_flags=collect_flags(build_config.dependencies, "lib"),
-    )
-
     cc = Compiler.create(
         cc=config["project"].get("cc", "gcc"),
-        libraries=dependencies.inc_flags,
+        libraries=collect_flags(build_config.dependencies, "include"),
         includes=(
             f"-I{Path(directory, 'src').absolute()}",
-            *dependencies.lib_flags,
+            *collect_flags(build_config.dependencies, "lib"),
         ),
         debug=debug,
     )

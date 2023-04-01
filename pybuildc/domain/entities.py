@@ -13,12 +13,6 @@ class BuildFiles:
 
 
 @dataclass(frozen=True)
-class Dependencies:
-    lib_flags: tuple[str]
-    inc_flags: tuple[str]
-
-
-@dataclass(frozen=True)
 class BuildConfig:
     target: str
     version: str
