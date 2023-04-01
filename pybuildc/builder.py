@@ -14,7 +14,7 @@ from returns.curry import partial
 from returns.pipeline import flow
 from returns.pointfree import bind
 
-from pybuildc.domain.entities import BuildConfig, BuildFiles, Dependencies
+from pybuildc.domain.entities import BuildConfig, BuildFiles
 from pybuildc.domain.services import Compiler, Cmd, BuildContext
 
 
