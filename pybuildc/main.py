@@ -62,7 +62,8 @@ def main() -> int:
             return 0
         case IOFailure(e):
             return error(e.failure())
-        case _:
+        case e:
+            print(e)
             pass
 
     return 0

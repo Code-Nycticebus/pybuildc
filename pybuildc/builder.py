@@ -11,11 +11,11 @@ import toml
 from returns.io import IOResultE, IOFailure, IOSuccess, impure_safe
 from returns.iterables import Fold
 from returns.curry import partial
+from returns.pipeline import flow
+from returns.pointfree import bind
+
 from pybuildc.domain.entities import BuildConfig, BuildFiles, Dependencies
-
 from pybuildc.domain.services import Compiler, Cmd, BuildContext
-
-Cache = Dict[Path, float]
 
 
 def display(files: Iterable[Path]):
@@ -55,7 +55,7 @@ def load_config(config_file: Path):
     return toml.loads(config_file.read_text())
 
 
-def load_cache(directory: Path) -> Cache:
+def load_cache(directory: Path) -> Dict[Path, float]:
     cache_file = Path(directory, "cache_mtime.pkl")
     if not cache_file.exists():
         return dict()
@@ -63,13 +63,15 @@ def load_cache(directory: Path) -> Cache:
     return pickle.loads(cache_file.read_bytes())
 
 
-def save_cache(directory: Path, cache_mtime: Cache):
+def save_cache(directory: Path, cache_mtime: Dict[Path, float]):
     cache_file = Path(directory, "cache_mtime.pkl")
     cache_file.parent.mkdir(parents=True, exist_ok=True)
     cache_file.write_bytes(pickle.dumps(cache_mtime))
 
 
-def include_file_changed(cache_mtime: Cache, include_files: Iterable[Path]) -> bool:
+def include_file_changed(
+    cache_mtime: Dict[Path, float], include_files: Iterable[Path]
+) -> bool:
     return any(
         tuple(
             filter(partial(file_changed, cache_mtime), include_files),
@@ -77,7 +79,7 @@ def include_file_changed(cache_mtime: Cache, include_files: Iterable[Path]) -> b
     )
 
 
-def file_changed(cache_mtime: Cache, file: Path) -> bool:
+def file_changed(cache_mtime: Dict[Path, float], file: Path) -> bool:
     if cache_mtime.get(file, 0.0) < (t := file.stat().st_mtime):
         cache_mtime[file] = t
         return True
@@ -102,7 +104,7 @@ def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
         ) or IOFailure(Exception("process_cmds failed in unkown ways"))
 
 
-def build(directory: Path, debug: bool) -> IOResultE[Path]:
+def create_context(directory: Path, debug: bool) -> IOResultE[BuildContext]:
     target = "debug" if debug else "release"
     build_directory = Path(directory, ".build", target)
 
@@ -111,9 +113,8 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
         case IOSuccess(c):
             config = c.unwrap()
         case e:
-            return e.map(lambda _: Path())
-
-    cache_mtime: Cache = load_cache(build_directory)
+            return e  # type: ignore
+    cache_mtime: Dict[Path, float] = load_cache(build_directory)
 
     build_files = BuildFiles(
         directory,
@@ -146,55 +147,93 @@ def build(directory: Path, debug: bool) -> IOResultE[Path]:
         debug=debug,
     )
 
-    context = BuildContext(
-        build_config,
-        cache_mtime,
-        build_files,
+    bin_file = create_bin_path(build_directory, build_config)
+
+    return IOResultE.from_value(
+        BuildContext(
+            build_config,
+            cache_mtime,
+            build_files,
+            bin_file,
+            cc,
+        )
     )
+
+
+def create_bin_path(build_directory: Path, config: BuildConfig) -> Path:
     exe_file = Path(
-        context.files.build_directory,
+        build_directory,
         "bin",
-        f"""{build_config.project_name}-{target}-{config['project']['version']}""",
+        f"""{config.project_name}-{config.target}-{config.version}""",
     )
     exe_file.parent.mkdir(parents=True, exist_ok=True)
-    *obj_cmds, binary_cmd = builder(context, cc, exe_file)
+    return exe_file
 
-    res: IOResultE[Iterable[Cmd]] = process_cmds(obj_cmds)
-    match res:
-        case IOFailure():
+
+def builder(context: BuildContext) -> IOResultE[BuildContext]:
+    def execute_build_commands(cmds: tuple[Cmd]) -> IOResultE[None]:
+        res = process_cmds(cmds[:-1])
+        if isinstance(res, IOFailure):
             return res
 
-    res2 = execute(binary_cmd)
-    match res2:
-        case IOFailure():
-            return res2
+        res = execute(cmds[-1])
+        if isinstance(res, IOFailure):
+            return res
 
-    save_cache(build_directory, cache_mtime)
-    return IOSuccess(exe_file)
+        return IOSuccess(None)
+
+    return flow(
+        context,
+        create_compile_commands,
+        execute_build_commands,
+        lambda _: context,
+    )
 
 
-def builder(
+def build(directory: Path, debug: bool) -> IOResultE[BuildContext]:
+    def save_cache_with_context(context: BuildContext):
+        save_cache(context.files.build_directory, context.cache)
+        return context
+
+    return flow(
+        create_context(directory, debug),
+        bind(builder),
+        save_cache_with_context,
+    )
+
+
+def create_compile_commands(
     context: BuildContext,
-    cc: Compiler,
-    exe_file: Path,
 ) -> tuple[Cmd, ...]:
     includes_changed = include_file_changed(context.cache, context.files.include_files)
-    compile_files = display(
-        filter(
-            lambda file: file_changed(context.cache, file) or includes_changed,
-            context.files.src_files,
-        )
-    )
-    obj_cmds = tuple(
-        map(
+    return flow(
+        display(
+            filter(
+                lambda file: file_changed(context.cache, file) or includes_changed,
+                context.files.src_files,
+            )
+        ),
+        lambda compile_files: map(
             partial(
-                compile_to_obj_file, cc, context.files.directory, context.config.target
+                compile_to_obj_file,
+                context.cc,
+                context.files.directory,
+                context.config.target,
             ),
             compile_files,
-        )
+        ),
+        lambda obj_commands: (
+            *obj_commands,
+            context.cc.compile(
+                map(
+                    partial(
+                        convert_to_obj_file,
+                        context.files.directory,
+                        context.config.target,
+                    ),
+                    context.files.src_files,
+                ),
+                context.bin_file,
+            ),
+        ),
     )
-    obj_files = map(
-        partial(convert_to_obj_file, context.files.directory, context.config.target),
-        context.files.src_files,
-    )
-    return (*obj_cmds, cc.compile(obj_files, exe_file))

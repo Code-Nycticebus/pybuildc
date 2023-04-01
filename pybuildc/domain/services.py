@@ -81,3 +81,5 @@ class BuildContext:
     config: BuildConfig
     cache: FileMtimeCache
     files: BuildFiles
+    bin_file: Path
+    cc: Compiler
