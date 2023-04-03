@@ -23,10 +23,12 @@ def display(files: Iterable[Path]):
         print(f"  \033[93m[BUILDING]\033[0m {file}")
         yield file
 
+
 def get_file(*args) -> Path:
     path = Path(*args)
     path.parent.mkdir(parents=True, exist_ok=True)
-    return path                    
+    return path
+
 
 @impure_safe
 def execute(cmd: Cmd) -> Cmd:
@@ -106,15 +108,15 @@ def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
 
 def create_context(directory: Path, debug: bool) -> IOResultE[BuildContext]:
     target = "debug" if debug else "release"
-    build_directory = get_file(directory, ".build", target) 
+    build_directory = get_file(directory, ".build", target)
 
     build_files = BuildFiles(
-        directory = directory,
-        build_directory = Path(directory, ".build", target),
-        src_files= tuple(Path(directory, "src").rglob("*.c")),
+        directory=directory,
+        build_directory=Path(directory, ".build", target),
+        src_files=tuple(Path(directory, "src").rglob("*.c")),
         include_files=tuple(Path(directory, "src").rglob("*.h")),
-        cache = get_file(build_directory, "file_mtime.pickle"),
-        config = get_file(directory, "pybuildc.toml"),
+        cache=get_file(build_directory, "file_mtime.pickle"),
+        config=get_file(directory, "pybuildc.toml"),
     )
     match load_config(build_files.config):
         case IOSuccess(c):
@@ -160,7 +162,7 @@ def create_bin_path(build_directory: Path, config: BuildConfig) -> Path:
     return get_file(
         build_directory,
         "bin",
-        f"""{config.project_name}-{config.target}-{config.version}""",
+        f"""{config.project_name}-{config.target}-{config.version.replace(".", "-")}""",
     )
 
 
@@ -208,32 +210,32 @@ def create_compile_commands(
             )
         ),
         lambda compile_files: map(
-            partial(
-                compile_to_obj_file,
-                context.cc,
-                context.files.directory,
-                context.config.target,
+            lambda obj_file: compile_to_obj_file(
+                obj_file=obj_file,
+                cc=context.cc,
+                project_directory=context.files.directory,
+                target=context.config.target,
             ),
             compile_files,
         ),
-        lambda obj_commands: (
+        lambda obj_commands: tuple((
             obj_commands,
             map(
-                partial(
-                    convert_to_obj_file,
-                    context.files.directory,
-                    context.config.target,
+                lambda src_file: convert_to_obj_file(
+                    file=src_file, 
+                    project_directory=context.files.directory,
+                    target=context.config.target,
                 ),
                 context.files.src_files,
             ),
-        ),
-        lambda commands_and_files: (
+        )),
+        lambda commands_and_files: tuple((
             *commands_and_files[0],
             context.cc.compile(
                 commands_and_files[1],
                 context.bin_file,
             )
-            if Path(context.files.directory, "src", "main.c").exists()
+            if Path(context.files.directory, "src", "main.c") in context.files.src_files
             else (
                 "ar",
                 "rcs",
@@ -241,4 +243,4 @@ def create_compile_commands(
                 *commands_and_files[1],
             ),
         ),
-    )
+    ))
