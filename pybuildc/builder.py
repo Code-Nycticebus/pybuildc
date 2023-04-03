@@ -162,7 +162,7 @@ def create_bin_path(build_directory: Path, config: BuildConfig) -> Path:
     return get_file(
         build_directory,
         "bin",
-        f"""{config.project_name}-{config.target}-{config.version.replace(".", "-")}""",
+        f"""{config.project_name}-{config.target}""",
     )
 
 
@@ -236,11 +236,11 @@ def create_compile_commands(
                 context.bin_file,
             )
             if Path(context.files.directory, "src", "main.c") in context.files.src_files
-            else (
+            else tuple((
                 "ar",
                 "rcs",
-                str(Path(context.bin_file)) + ".a",
+                Path(context.bin_file).with_suffix(".a"),
                 *commands_and_files[1],
-            ),
+            )),
         ),
     ))
