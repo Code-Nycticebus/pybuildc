@@ -10,7 +10,6 @@ import toml
 
 from returns.io import IOResultE, IOFailure, IOSuccess, impure_safe
 from returns.iterables import Fold
-from returns.curry import partial
 from returns.pipeline import flow
 from returns.pointfree import bind
 
@@ -18,7 +17,7 @@ from pybuildc.domain.entities import BuildConfig, BuildFiles
 from pybuildc.domain.services import Compiler, Cmd, BuildContext
 
 
-def display(files: Iterable[Path]):
+def display(files: Iterable[Path]) -> Iterable[Path]:
     for file in files:
         print(f"  \033[93m[BUILDING]\033[0m {file}")
         yield file
@@ -31,8 +30,9 @@ def get_file(*args) -> Path:
 
 
 @impure_safe
-def execute(cmd: Cmd) -> None:
+def execute(cmd: Cmd) -> Cmd:
     subprocess.run(cmd, check=True)
+    return cmd
 
 
 def convert_to_obj_file(project_directory: Path, target: str, file: Path) -> Path:
@@ -63,21 +63,11 @@ def load_config(config_file: Path):
 def load_cache(file: Path) -> Dict[Path, float]:
     if not file.exists():
         return dict()
-    return pickle.loads(file.read_bytes())
+    return dict(pickle.loads(file.read_bytes()))
 
 
 def save_cache(file: Path, cache_mtime: Dict[Path, float]):
     file.write_bytes(pickle.dumps(cache_mtime))
-
-
-def include_file_changed(
-    cache_mtime: Dict[Path, float], include_files: Iterable[Path]
-) -> bool:
-    return any(
-        tuple(
-            filter(partial(file_changed, cache_mtime), include_files),
-        )
-    )
 
 
 def file_changed(cache_mtime: Dict[Path, float], file: Path) -> bool:
@@ -85,6 +75,19 @@ def file_changed(cache_mtime: Dict[Path, float], file: Path) -> bool:
         cache_mtime[file] = mtime
         return True
     return False
+
+
+def include_file_changed(
+    cache_mtime: Dict[Path, float], include_files: Iterable[Path]
+) -> bool:
+    return any(
+        tuple(
+            map(
+                lambda file: file_changed(cache_mtime=cache_mtime, file=file),
+                include_files,
+            ),
+        )
+    )
 
 
 def collect_flags(
@@ -100,14 +103,28 @@ def process_cmds(cmds: Iterable[Cmd]) -> IOResultE[Iterable[Cmd]]:
     with futures.ProcessPoolExecutor() as executor:
         commands = futures.as_completed((executor.submit(execute, cmd) for cmd in cmds))
         return Fold.collect(
-            map(lambda p: p.result(), commands),
-            IOSuccess(()),
-        ) or IOFailure(Exception("process_cmds failed in unkown ways"))
+            tuple(map(lambda p: p.result(), commands)),
+            IOResultE.from_value(()),
+        ) or IOFailure(
+            Exception("Something went wrong while processing commands asynchronously")
+        )
+
+
+def create_config(file_path: Path, target: str) -> IOResultE[BuildConfig]:
+    return load_config(file_path).map(
+        lambda config: BuildConfig(
+            target=target,
+            version=config["project"].get("version", "0.0.0"),
+            cc=config["project"].get("cc", "gcc"),
+            project_name=file_path.parent.name,
+            dependencies=config.get("dependencies", dict()),
+        )
+    )
 
 
 def create_context(directory: Path, debug: bool) -> IOResultE[BuildContext]:
-    target = "debug" if debug else "release"
-    build_directory = get_file(directory, ".build", target)
+    target: str = "debug" if debug else "release"
+    build_directory: Path = get_file(directory, ".build", target)
 
     build_files = BuildFiles(
         directory=directory,
@@ -117,43 +134,22 @@ def create_context(directory: Path, debug: bool) -> IOResultE[BuildContext]:
         cache=get_file(build_directory, "file_mtime.pickle"),
         config=get_file(directory, "pybuildc.toml"),
     )
-    match load_config(build_files.config):
-        case IOSuccess(c):
-            config = c.unwrap()
-        case e:
-            return e  # type: ignore
-
-    cache_mtime: Dict[Path, float] = load_cache(build_files.cache)
-
-    dependency_config = config.get("dependencies", dict())
-
-    build_config = BuildConfig(
-        target,
-        config["project"]["version"],
-        directory.name,
-        dependency_config,
-    )
-
-    cc = Compiler.create(
-        cc=config["project"].get("cc", "gcc"),
-        libraries=collect_flags(build_config.dependencies, "include"),
-        includes=(
-            f"-I{Path(directory, 'src').absolute()}",
-            *collect_flags(build_config.dependencies, "lib"),
+    return create_config(build_files.config, target).map(
+        lambda config: BuildContext(
+            config=config,
+            cache=load_cache(build_files.cache),
+            files=build_files,
+            bin_file=create_bin_path(build_directory, config),
+            cc=Compiler.create(
+                cc=config.cc,
+                libraries=collect_flags(config.dependencies, "include"),
+                includes=(
+                    f"-I{Path(directory, 'src')}",
+                    *collect_flags(config.dependencies, "lib"),
+                ),
+                debug=debug,
+            ),
         ),
-        debug=debug,
-    )
-
-    bin_file = create_bin_path(build_directory, build_config)
-
-    return IOSuccess(
-        BuildContext(
-            build_config,
-            cache_mtime,
-            build_files,
-            bin_file,
-            cc,
-        )
     )
 
 
@@ -166,14 +162,14 @@ def create_bin_path(build_directory: Path, config: BuildConfig) -> Path:
 
 
 def builder(context: BuildContext) -> IOResultE[BuildContext]:
-    def execute_build_commands(cmds: tuple[Cmd]) -> IOResultE[None]:
+    def execute_build_commands(cmds: tuple[Cmd, ...]) -> IOResultE[None]:
         res = process_cmds(cmds[:-1])
         if isinstance(res, IOFailure):
             return res
 
-        res = execute(cmds[-1])
-        if isinstance(res, IOFailure):
-            return res
+        res2 = execute(cmds[-1])
+        if isinstance(res2, IOFailure):
+            return res2
 
         return IOSuccess(None)
 
@@ -181,7 +177,7 @@ def builder(context: BuildContext) -> IOResultE[BuildContext]:
         context,
         create_compile_commands,
         execute_build_commands,
-        bind(lambda _: IOSuccess(context)),
+        lambda _: IOSuccess(context),
     )
 
 

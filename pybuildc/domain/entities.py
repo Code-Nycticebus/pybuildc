@@ -18,5 +18,6 @@ class BuildFiles:
 class BuildConfig:
     target: str
     version: str
+    cc: str
     project_name: str
     dependencies: Dict[str, Dict[str, Iterable[str]]]

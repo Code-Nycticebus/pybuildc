@@ -36,10 +36,10 @@ RELEASE_FLAGS: Args = ("-O2",)
 @dataclass(frozen=True)
 class Compiler:
     cc: str
-    warnings: tuple[str]
-    flags: tuple[str]
-    includes: tuple[str]
-    libraries: tuple[str]
+    warnings: Args
+    flags: Args
+    includes: Args
+    libraries: Args
 
     def compile(
         self,
