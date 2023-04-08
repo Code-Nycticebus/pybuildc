@@ -31,9 +31,8 @@ def get_file(*args) -> Path:
 
 
 @impure_safe
-def execute(cmd: Cmd) -> Cmd:
+def execute(cmd: Cmd) -> None:
     subprocess.run(cmd, check=True)
-    return cmd
 
 
 def convert_to_obj_file(project_directory: Path, target: str, file: Path) -> Path:
@@ -48,7 +47,7 @@ def convert_to_obj_file(project_directory: Path, target: str, file: Path) -> Pat
     return obj_file
 
 
-def compile_to_obj_file(
+def compile_to_obj(
     cc: Compiler, project_directory: Path, target: str, obj_file: Path
 ) -> Cmd:
     return cc.compile(
@@ -147,7 +146,7 @@ def create_context(directory: Path, debug: bool) -> IOResultE[BuildContext]:
 
     bin_file = create_bin_path(build_directory, build_config)
 
-    return IOResultE.from_value(
+    return IOSuccess(
         BuildContext(
             build_config,
             cache_mtime,
@@ -198,6 +197,47 @@ def build(directory: Path, debug: bool) -> IOResultE[BuildContext]:
     )
 
 
+def create_obj_commands(context: BuildContext, files: Iterable[Path]):
+    return map(
+        lambda obj_file: compile_to_obj(
+            obj_file=obj_file,
+            cc=context.cc,
+            project_directory=context.files.directory,
+            target=context.config.target,
+        ),
+        files,
+    )
+
+
+def create_obj_files(context: BuildContext) -> Iterable[Path]:
+    return map(
+        lambda src_file: convert_to_obj_file(
+            file=src_file,
+            project_directory=context.files.directory,
+            target=context.config.target,
+        ),
+        context.files.src_files,
+    )
+
+
+def create_exe_command(context: BuildContext, obj_files: Iterable[Path]) -> Cmd:
+    return (
+        context.cc.compile(
+            obj_files,
+            context.bin_file,
+        )
+        if Path(context.files.directory, "src", "main.c") in context.files.src_files
+        else tuple(
+            (
+                "ar",
+                "rcs",
+                str(Path(context.bin_file).with_suffix(".a")),
+                *map(str, obj_files),
+            )
+        )
+    )
+
+
 def create_compile_commands(
     context: BuildContext,
 ) -> tuple[Cmd, ...]:
@@ -209,38 +249,8 @@ def create_compile_commands(
                 context.files.src_files,
             )
         ),
-        lambda compile_files: map(
-            lambda obj_file: compile_to_obj_file(
-                obj_file=obj_file,
-                cc=context.cc,
-                project_directory=context.files.directory,
-                target=context.config.target,
-            ),
-            compile_files,
+        lambda compile_files: create_obj_commands(context, compile_files),
+        lambda obj_commands: tuple(
+            (*obj_commands, create_exe_command(context, create_obj_files(context))),
         ),
-        lambda obj_commands: tuple((
-            obj_commands,
-            map(
-                lambda src_file: convert_to_obj_file(
-                    file=src_file, 
-                    project_directory=context.files.directory,
-                    target=context.config.target,
-                ),
-                context.files.src_files,
-            ),
-        )),
-        lambda commands_and_files: tuple((
-            *commands_and_files[0],
-            context.cc.compile(
-                commands_and_files[1],
-                context.bin_file,
-            )
-            if Path(context.files.directory, "src", "main.c") in context.files.src_files
-            else tuple((
-                "ar",
-                "rcs",
-                Path(context.bin_file).with_suffix(".a"),
-                *commands_and_files[1],
-            )),
-        ),
-    ))
+    )
