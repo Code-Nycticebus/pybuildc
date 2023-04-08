@@ -29,8 +29,10 @@ def pybuildc(commands, argv) -> IOResultE[int]:
             return build_command(commands)
         case "run":
             return run_command(commands, argv)
-        case _:
-            return IOFailure(NotImplementedError("argument not implemented"))
+        case action:
+            return IOFailure(
+                NotImplementedError(f"action '{action}' is not implemented")
+            )
 
 
 def main() -> int:
