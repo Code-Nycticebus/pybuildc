@@ -8,16 +8,24 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         description="A build system for the c language",
     )
     parser.add_argument("-v", "--version", action="version", version=__version__)
-
+    parser.add_argument(
+        "-d",
+        "--directory",
+        help="directory to build",
+        type=Path,
+        default=Path.cwd(),
+    )
     subparser = parser.add_subparsers(
         dest="action",
         required=True,
         description="Build action",
     )
+
     new_parser = subparser.add_parser("new", help="Creates a new project")
+    # makes directory a required argument
     new_parser.add_argument(
         "directory",
-        help="Name of the project directory",
+        help="Name of the new project directory",
         type=Path,
     )
     new_parser.add_argument(
@@ -29,13 +37,6 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
 
     build_parser = subparser.add_parser("build", help="Builds the project")
     build_parser.add_argument(
-        "-d",
-        "--directory",
-        help="directory to build",
-        type=Path,
-        default=Path.cwd(),
-    )
-    build_parser.add_argument(
         "-r",
         "--release",
         help="Enables optimizations and removes debug flags",
@@ -44,13 +45,6 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
 
     run_parser = subparser.add_parser(
         "run", help="Builds the project and runs the binary"
-    )
-    run_parser.add_argument(
-        "-d",
-        "--directory",
-        help="directory to build",
-        type=Path,
-        default=Path.cwd(),
     )
     run_parser.add_argument(
         "-r",
