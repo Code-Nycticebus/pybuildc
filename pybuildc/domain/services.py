@@ -2,7 +2,7 @@ from collections.abc import Iterable
 from pathlib import Path
 import subprocess
 
-from returns.io import IOFailure, IOResultE, IOSuccess, impure_safe
+from returns.io import IOFailure, IOResultE, IOSuccess
 from returns.iterables import Fold
 
 from pybuildc.domain.entities import Args, CommandEntity, CompilerEntity, BuildStructure

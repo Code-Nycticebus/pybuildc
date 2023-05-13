@@ -3,6 +3,7 @@ from typing import Iterable
 
 from returns.io import IOResultE
 
+
 from pybuildc.domain.entities import BuildStructure, CommandEntity, CompilerEntity
 from pybuildc.domain.services import (
     compile_exe,
@@ -24,7 +25,7 @@ def compile_bin(
         return compile_lib(obj_files, build_dirs.bin)
 
 
-def project_builder(args) -> IOResultE:
+def project_builder(args) -> IOResultE[Path]:
     build_dirs = get_project_structure(args.directory, "" if args.release else "debug")
 
     cc = CompilerEntity(
@@ -34,8 +35,12 @@ def project_builder(args) -> IOResultE:
         includes=(),
     )
 
-    return compile_obj_files(cc, build_dirs).map(
-        lambda obj_file_commands: compile_bin(
-            cc, build_dirs, map(lambda cmd: cmd.output_path, obj_file_commands)
+    return (
+        compile_obj_files(cc, build_dirs)
+        .bind(
+            lambda obj_file_commands: compile_bin(
+                cc, build_dirs, map(lambda cmd: cmd.output_path, obj_file_commands)
+            )
         )
+        .map(lambda ce: ce.output_path)
     )
