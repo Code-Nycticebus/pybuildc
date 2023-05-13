@@ -5,7 +5,8 @@ from returns.io import IOResultE, IOFailure, IOSuccess
 from returns.result import Failure, Success
 
 from pybuildc.args import parse_args
-from pybuildc.commands import build_command, new_command, run_command
+
+import pybuildc.commands as commands
 
 
 # TODO error handling
@@ -21,14 +22,16 @@ def error(e: Exception) -> int:
             raise e
 
 
-def pybuildc(commands, argv) -> IOResultE[int]:
-    match commands.action:
+def pybuildc(args, argv) -> IOResultE[int]:
+    match args.action:
         case "new":
-            return new_command(commands)
+            return commands.new(args)
         case "build":
-            return build_command(commands)
+            return commands.build(args)
         case "run":
-            return run_command(commands, argv)
+            return commands.run(args, argv)
+        case "test":
+            return commands.test(args, argv)
         case action:
             return IOFailure(
                 NotImplementedError(f"action '{action}' is not implemented")

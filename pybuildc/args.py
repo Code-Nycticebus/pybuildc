@@ -53,4 +53,12 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         action="store_true",
     )
 
+    test_parser = subparser.add_parser(
+        "test",
+        help="Builds and runs tests in 'tests' folder. '*-test.c' is treated as the 'main' file.",
+    )
+    test_parser.add_argument(
+        "-f", "--file", help="Runs only one specific '*-test.c' file."
+    )
+
     return parser.parse_known_args(args)
