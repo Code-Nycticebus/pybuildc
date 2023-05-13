@@ -1,9 +1,5 @@
 from pathlib import Path
-import subprocess
-
-from returns.io import IOResultE, impure_safe
-
-from pybuildc.builder import build
+from returns.io import IOResultE
 
 
 def _create_file(file: Path, content: str) -> Path:
@@ -12,7 +8,7 @@ def _create_file(file: Path, content: str) -> Path:
     return file
 
 
-def new_command(args) -> IOResultE[int]:
+def new_project(args) -> IOResultE[int]:
     args.directory.mkdir(parents=True)
     _create_file(
         Path(args.directory, "src", args.directory.with_suffix(".h").name),
@@ -50,26 +46,3 @@ int main(void) {{ printf("Test: " LIBNAME "\\n"); }}
     )
 
     return IOResultE.from_value(0)
-
-
-def build_command(args) -> IOResultE[int]:
-    return build(args.directory, not args.release).map(lambda _: 0)
-
-
-def run_command(args, argv) -> IOResultE[int]:
-    return (
-        build(args.directory, not args.release)
-        .bind(
-            lambda context: impure_safe(subprocess.run)(
-                (str(context.bin_file), *argv),
-                check=True,
-                text=True,
-            )
-        )
-        .alt(
-            lambda p: Exception("Not an exe project")
-            if isinstance(p, FileNotFoundError)
-            else p
-        )
-        .map(lambda process: process.returncode)
-    )
