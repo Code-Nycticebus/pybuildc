@@ -1,23 +1,28 @@
-from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
+
+Args = tuple[str, ...]
+Cmd = tuple[str, ...]
 
 
 @dataclass(frozen=True)
-class BuildFiles:
-    directory: Path
-    build_directory: Path
-    cache: Path
-    config: Path
-    src_files: tuple[Path, ...]
-    include_files: tuple[Path, ...]
-
-
-@dataclass(frozen=True)
-class BuildConfig:
-    target: str
-    version: str
+class CompilerEntity:
     cc: str
-    project_name: str
-    dependencies: Dict[str, Dict[str, Iterable[str]]]
+    cflags: Args
+    lib_flags: Args
+    includes: Args
+
+
+@dataclass(frozen=True)
+class CommandEntity:
+    output_path: Path
+    command: Cmd
+
+
+@dataclass(frozen=True)
+class BuildStructure:
+    project: Path
+    build: Path
+    src: Path
+    bin: Path
+    test: Path
