@@ -16,10 +16,12 @@ def error(e: Exception) -> int:
             print(f"File not found: {e.filename}")
             return 1
         case CalledProcessError():
-            print(" ".join(e.cmd))
+            print("Command exited with non zero exit code:", " ".join(e.cmd))
             return e.returncode
-        case _:
+        case Exception():
             raise e
+        case _:
+            print("Unkown returntype", e)
 
 
 def pybuildc(args, argv) -> IOResultE[int]:

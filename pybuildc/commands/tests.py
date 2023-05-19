@@ -2,68 +2,37 @@ from pathlib import Path
 import subprocess
 from typing import Iterable
 
-from returns.io import IOResultE, IOFailure, IOSuccess
-from returns.iterables import Fold
+from returns.curry import partial
+from returns.io import IOResultE
 
-from pybuildc.domain.entities import BuildStructure, CommandEntity, CompilerEntity
-from pybuildc.domain.services import (
-    compile_exe,
-    create_path,
-    get_project_structure,
-    compile_obj_files,
-)
+from pybuildc.domain.builder import build_test_files
+from pybuildc.domain.context import BuildContext
 
 
-def run_test(test: Path, argv: list[str]):
-    ret = subprocess.run((str(test), *argv))
-    if ret.returncode:
-        return IOFailure(Exception(ret))
+# Maybe a test result type would be usefull
+def run_all_tests(
+    tests: Iterable[Path], argv: Iterable[str]
+) -> IOResultE[tuple[Path, ...]]:
+    failed: tuple[Path, ...] = ()
+    succ: tuple[Path, ...] = ()
+
+    for test in tests:
+        ret = subprocess.run((str(test), *argv))
+        if ret.returncode == 0:
+            succ += (test,)
+        else:
+            failed += (test,)
+
+    if failed:
+        return IOResultE.from_failure(Exception(failed))
     else:
-        return IOSuccess(test)
+        return IOResultE.from_value(succ)
 
 
-def compile_all_tests(
-    cc: CompilerEntity,
-    build_dirs: BuildStructure,
-    obj_files: Iterable[Path],
-) -> IOResultE[Iterable[CommandEntity]]:
-    return Fold.collect(
-        map(
-            lambda test_file: compile_exe(
-                cc,
-                (*obj_files, test_file),
-                create_path(build_dirs.build, "test", test_file.with_suffix("").name),
-            ),
-            build_dirs.test.rglob("*-test.c"),
-        ),
-        IOResultE.from_value(()),
-    ) or IOFailure(ValueError("Something wrong while compiling all tests"))
-
-
-def test_builder(args, argv: list[str]) -> IOResultE:
-    build_dirs = get_project_structure(args.directory, "debug")
-
-    cc = CompilerEntity(
-        cc="gcc", cflags=(), lib_flags=("-lm",), includes=(f"-I{build_dirs.src}",)
-    )
-
+def test(args, argv) -> IOResultE[int]:
     return (
-        compile_obj_files(cc, build_dirs)
-        .bind(
-            lambda obj_file_commands: compile_all_tests(
-                cc,
-                build_dirs,
-                tuple(map(lambda cmd: cmd.output_path, obj_file_commands)),
-            )
-        )
-        .bind(
-            lambda test_compile_commands: Fold.collect(
-                map(
-                    lambda test: run_test(test.output_path, argv),
-                    test_compile_commands,
-                ),
-                IOResultE.from_value(()),
-            )
-            or IOFailure(ValueError("Something wrong while compiling all tests"))
-        )
+        BuildContext.create_from_config(args.directory, "debug")
+        .bind(build_test_files)
+        .bind(partial(run_all_tests, argv=argv))
+        .map(lambda _: 0)
     )
