@@ -52,8 +52,6 @@ class _CompilerConfig(Protocol):
     src: Path
     tests: Path
 
-    a: int
-
 
 def _create_path(*args):
     """Create path and mkdir's the parents to make sure the directory is valid."""
@@ -150,7 +148,7 @@ def compile_all_obj_files(
 
 
 def compile_all_test_files(
-    obj_files: tuple[Path],
+    obj_files: Iterable[Path],
 ) -> RequiresContext[tuple[CompileCommand, ...], _CompilerConfig]:
     """Compiles test files. It takes the obj_files that need to be included and returns the commands to compile all tests."""
 

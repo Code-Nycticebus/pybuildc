@@ -31,6 +31,8 @@ class BuildContext:
     src: Path
     tests: Path
 
+    cache: dict[Path, float]
+
     @classmethod
     def create_from_config(cls, directory: Path, target: str) -> IOResultE:
         return load_config(Path(directory, "pybuildc.toml")).map(
@@ -38,6 +40,7 @@ class BuildContext:
                 include_flags=config["deps"].get("include_flags", ())
                 + (f"-I{Path(directory, 'src')}",),
                 library_flags=config["deps"]["library_flags"],
+                cache=dict(),
                 **config["project"],
                 **get_project_structure(directory, target),
             )

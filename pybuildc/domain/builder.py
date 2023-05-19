@@ -39,7 +39,7 @@ def _build_command_run_with_context(cmd: CompileCommand):
     return RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(inner)
 
 
-def _build_command_run_all(
+def _build_command_run_all_with_context(
     cmds: Iterable[CompileCommand],
 ) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
     def inner(_: _BuilderConfig):
@@ -70,7 +70,7 @@ def _build_command_run_all_concurrent(
 
 def _build_command_run_all_concurrent_with_context(cmds: Iterable[CompileCommand]):
     return (
-        RequiresContextIOResultE[tuple[Path], _BuilderConfig]
+        RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]
         .ask()
         .bind(
             lambda _: RequiresContextIOResultE.from_ioresult(
@@ -84,14 +84,18 @@ def _build_command_run_all_concurrent_with_context(cmds: Iterable[CompileCommand
 
 
 def _build_obj_files(
-    src_files: Iterable[Path],
+    src_files: tuple[Path, ...],
 ) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
     def _inner(_: _BuilderConfig):
         return flow(
             src_files,
             compile_all_obj_files,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
-            bind(_build_command_run_all_concurrent_with_context),
+            bind(
+                _build_command_run_all_concurrent_with_context
+                if len(src_files) > 10
+                else _build_command_run_all_with_context
+            ),
         )
 
     return RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig].ask().bind(_inner)
@@ -115,18 +119,29 @@ def build_bin(
     context: _BuilderConfig,
 ) -> IOResultE[Path]:
     return flow(
-        context.src.rglob("*.c"),
+        tuple(context.src.rglob("*.c")),
         _build_obj_files,
         bind(_build_bin_file),
     )(context)
 
 
-def build_test_files(context) -> IOResultE:
-    # Type ignore because it works. compile_all_test_files has a different dependency!
-    return flow(  # type: ignore
-        filter(lambda file: file.name != "main.c", context.src.rglob("*.c")),
+def _build_test_files(
+    obj_files: Iterable[Path],
+) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
+    def _inner(_: _BuilderConfig):
+        return flow(
+            obj_files,
+            compile_all_test_files,
+            RequiresContextIOResultE.from_context,  # Needed because "compile_all_test_files()" returns a "RequiresContext"
+            bind(_build_command_run_all_concurrent_with_context),
+        )
+
+    return RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(_inner)
+
+
+def build_test_files(context) -> IOResultE[tuple[Path, ...]]:
+    return flow(
+        tuple(filter(lambda file: file.name != "main.c", context.src.rglob("*.c"))),
         _build_obj_files,
-        bind(compile_all_test_files),
-        RequiresContextIOResultE.from_context,  # Needed because "compile_all_test_files()" returns a "RequiresContext"
-        bind(_build_command_run_all_concurrent_with_context),
+        bind(_build_test_files),
     )(context)
