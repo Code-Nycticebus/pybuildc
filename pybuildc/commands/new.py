@@ -8,7 +8,7 @@ def _create_file(file: Path, content: str) -> Path:
     return file
 
 
-def new_project(args) -> IOResultE[int]:
+def new(args) -> IOResultE[int]:
     args.directory.mkdir(parents=True)
     _create_file(
         Path(args.directory, "src", args.directory.with_suffix(".h").name),
