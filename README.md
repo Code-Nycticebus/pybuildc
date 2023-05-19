@@ -9,7 +9,7 @@ Personal build system for the C language. This project serves as a way to learn 
 2. [ ] Compile obj-files concurrently to safe compile time
 3. [ ] Handle dependecies
 4. [x] change between Debug and Release flags
-5. [ ] Testing
+5. [x] Testing
 
 ## Install
 
