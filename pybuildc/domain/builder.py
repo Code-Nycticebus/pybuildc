@@ -1,6 +1,7 @@
 from pathlib import Path
 import subprocess
 from typing import Iterable, Protocol
+from concurrent import futures
 
 from returns.context import RequiresContextIOResultE
 from returns.io import IOResultE
@@ -24,14 +25,18 @@ class _BuilderConfig(Protocol):
 
 def _build_command_run(
     cmd: CompileCommand,
-) -> RequiresContextIOResultE[CompileCommand, _BuilderConfig]:
-    def inner(_: _BuilderConfig):
-        print("building", cmd.output_path)
-        if subprocess.run(cmd.command).returncode != 0:
-            return RequiresContextIOResultE.from_failure(Exception(cmd.command))
-        return RequiresContextIOResultE.from_value(cmd.output_path)
+) -> IOResultE[Path]:
+    print("building", cmd.output_path)
+    if subprocess.run(cmd.command).returncode != 0:
+        return IOResultE.from_failure(Exception(cmd.command))
+    return IOResultE.from_value(cmd.output_path)
 
-    return RequiresContextIOResultE[CompileCommand, _BuilderConfig].ask().bind(inner)
+
+def _build_command_run_with_context(cmd: CompileCommand):
+    def inner(_: _BuilderConfig):
+        return RequiresContextIOResultE.from_ioresult(_build_command_run(cmd))
+
+    return RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(inner)
 
 
 def _build_command_run_all(
@@ -39,12 +44,40 @@ def _build_command_run_all(
 ) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
     def inner(_: _BuilderConfig):
         return Fold.collect(
-            map(_build_command_run, cmds), RequiresContextIOResultE.from_value(())
+            map(_build_command_run_with_context, cmds),
+            RequiresContextIOResultE.from_value(()),
         ) or RequiresContextIOResultE.from_failure(
             ValueError("Something went wrong while executing all commands")
         )
 
     return RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig].ask().bind(inner)
+
+
+def _build_command_run_all_concurrent(
+    cmds: Iterable[CompileCommand],
+) -> IOResultE[tuple[Path, ...]]:
+    with futures.ProcessPoolExecutor() as executor:
+        commands = futures.as_completed(
+            (executor.submit(_build_command_run, cmd) for cmd in cmds)
+        )
+        return Fold.collect(
+            tuple(map(lambda p: p.result(), commands)),
+            IOResultE.from_value(()),
+        ) or IOResultE.from_failure(
+            Exception("Something went wrong while processing commands asynchronously")
+        )
+
+
+def _build_command_run_all_concurrent_with_context(cmds: Iterable[CompileCommand]):
+    return (
+        RequiresContextIOResultE[tuple[Path], _BuilderConfig]
+        .ask()
+        .bind(
+            lambda _: RequiresContextIOResultE.from_ioresult(
+                _build_command_run_all_concurrent(cmds)
+            )
+        )
+    )
 
 
 # TODO create async command running!
@@ -58,7 +91,7 @@ def _build_obj_files(
             src_files,
             compile_all_obj_files,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
-            bind(_build_command_run_all),
+            bind(_build_command_run_all_concurrent_with_context),
         )
 
     return RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig].ask().bind(_inner)
@@ -72,7 +105,7 @@ def _build_bin_file(
             obj_files,
             link_exe if Path(context.src, "main.c").exists() else link_lib,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
-            bind(_build_command_run),
+            bind(_build_command_run_with_context),
         )
 
     return RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(_inner)
@@ -95,5 +128,5 @@ def build_test_files(context) -> IOResultE:
         _build_obj_files,
         bind(compile_all_test_files),
         RequiresContextIOResultE.from_context,  # Needed because "compile_all_test_files()" returns a "RequiresContext"
-        bind(_build_command_run_all),
+        bind(_build_command_run_all_concurrent_with_context),
     )(context)

@@ -95,10 +95,10 @@ def link_exe(
 ) -> RequiresContext[CompileCommand, _CompilerConfig]:
     """Links all obj files to a exe usin the cc"""
 
-    def _inner(context):
+    def _inner_link_exe(context):
         return compile(obj_files, _create_path(context.build, "bin", context.name))
 
-    return RequiresContext[CompileCommand, _CompilerConfig].ask().bind(_inner)
+    return RequiresContext[CompileCommand, _CompilerConfig].ask().bind(_inner_link_exe)
 
 
 def link_lib(
@@ -106,7 +106,7 @@ def link_lib(
 ) -> RequiresContext[CompileCommand, _CompilerConfig]:
     """Links all obj files to a static library using ar"""
 
-    def _inner(context: _CompilerConfig):
+    def _inner_link_lib(context: _CompilerConfig):
         output_path = _create_path(context.build, "bin", context.name).with_suffix(".a")
         return CompileCommand(
             output_path=output_path,
@@ -118,7 +118,7 @@ def link_lib(
             ),
         )
 
-    return RequiresContext(_inner)
+    return RequiresContext(_inner_link_lib)
 
 
 def _compile_obj_file(
@@ -154,7 +154,7 @@ def compile_all_test_files(
 ) -> RequiresContext[tuple[CompileCommand, ...], _CompilerConfig]:
     """Compiles test files. It takes the obj_files that need to be included and returns the commands to compile all tests."""
 
-    def _inner(context: _CompilerConfig):
+    def _inner_compile_all_test_files(context: _CompilerConfig):
         return tuple(
             map(
                 lambda test_file: compile(
@@ -167,4 +167,4 @@ def compile_all_test_files(
             )
         )
 
-    return RequiresContext(_inner)
+    return RequiresContext(_inner_compile_all_test_files)
