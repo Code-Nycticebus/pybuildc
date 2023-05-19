@@ -52,7 +52,12 @@ def create_dependecy_config(config: dict[str, Any]) -> DependencyConfig:
         include_flags=tuple(chain(*(v.get("include", ()) for v in config.values()))),
         # iterate over 'config' library names as keys, chain the directory and the library flag and create a tuple
         library_flags=tuple(
-            chain(*((v.get("dir", ""), v["lib"]) for v in config.values()))
+            chain(
+                *(
+                    (v["dir"], v["lib"]) if "dir" in v else (v["lib"],)
+                    for v in config.values()
+                )
+            )
         ),
     )
 
