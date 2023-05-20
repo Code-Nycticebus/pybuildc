@@ -14,6 +14,8 @@ pip install pybuildc
 ```
 
 ## Usage
+
+### Commands
 1. [New](#new)
 2. [Build](#build)
 2. [Run](#run)
