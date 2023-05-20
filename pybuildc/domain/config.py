@@ -46,7 +46,6 @@ def create_project_config(config: dict[str, Any]) -> ProjectConfig:
 
 
 def create_dependecy_config(config: dict[str, Any]) -> DependencyConfig:
-    print(config)
     return DependencyConfig(
         # iterate over 'config' library names as keys, chain all the Iterables toghether and create a tuple.
         include_flags=tuple(chain(*(v.get("include", ()) for v in config.values()))),
@@ -69,10 +68,6 @@ def parse_config(config: dict[str, Any]) -> Config:
     }
 
 
-def debug(_):
-    print(_)
-    return _
-
 
 def load_config(config_path: Path) -> IOResultE[Config]:
-    return load_config_file(config_path).map(parse_config).map(debug)
+    return load_config_file(config_path).map(parse_config)
