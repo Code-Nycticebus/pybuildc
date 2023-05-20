@@ -31,7 +31,7 @@ def run_all_tests(
 
 def test(args, argv) -> IOResultE[int]:
     return (
-        BuildContext.create_from_config(args.directory, "debug")
+        BuildContext.create_from_config(args.directory, "debug", args.verbose)
         .bind(build_test_files)
         .bind(partial(run_all_tests, argv=argv))
         .map(lambda _: 0)

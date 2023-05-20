@@ -6,7 +6,7 @@ from pybuildc.domain.context import BuildContext
 def build(args) -> IOResultE[int]:
     return (
         BuildContext.create_from_config(
-            args.directory, "release" if args.release else "debug"
+            args.directory, "release" if args.release else "debug", args.verbose
         )
         .bind(build_bin)
         .map(lambda _: 0)

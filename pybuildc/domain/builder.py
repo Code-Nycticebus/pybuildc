@@ -22,11 +22,12 @@ class _BuilderConfig(Protocol):
     src: Path
     tests: Path
 
+    verbose: bool
+
 
 def _build_command_run(
     cmd: CompileCommand,
 ) -> IOResultE[Path]:
-    print("building", cmd.output_path)
     if subprocess.run(cmd.command).returncode != 0:
         return IOResultE.from_failure(Exception(cmd.command))
     return IOResultE.from_value(cmd.output_path)
@@ -68,7 +69,9 @@ def _build_command_run_all_concurrent(
         )
 
 
-def _build_command_run_all_concurrent_with_context(cmds: Iterable[CompileCommand]):
+def _build_command_run_all_concurrent_with_context(
+    cmds: Iterable[CompileCommand],
+) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
     return (
         RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]
         .ask()
@@ -80,17 +83,38 @@ def _build_command_run_all_concurrent_with_context(cmds: Iterable[CompileCommand
     )
 
 
-# TODO create async command running!
+def display_build_command(cmds: Iterable[CompileCommand], name: str):
+    for cmd in cmds:
+        print(f"Building {name}: {cmd.output_path}")
+        yield cmd
+
+
+def display_with_context(
+    cmds: Iterable[CompileCommand],
+) -> RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]:
+    def _inner_display_with_context(context: _BuilderConfig):
+        for cmd in cmds:
+            print(f"Building: {cmd.output_path}")
+            if context.verbose:
+                print(" ".join(cmd.command))
+            yield cmd
+
+    return (
+        RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]
+        .ask()
+        .map(_inner_display_with_context)
+    )
 
 
 def _build_obj_files(
     src_files: tuple[Path, ...],
 ) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
-    def _inner(_: _BuilderConfig):
+    def _inner_build_obj_files(_: _BuilderConfig):
         return flow(
             src_files,
             compile_all_obj_files,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
+            bind(display_with_context),
             bind(
                 _build_command_run_all_concurrent_with_context
                 if len(src_files) > 10
@@ -98,13 +122,17 @@ def _build_obj_files(
             ),
         )
 
-    return RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig].ask().bind(_inner)
+    return (
+        RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]
+        .ask()
+        .bind(_inner_build_obj_files)
+    )
 
 
 def _build_bin_file(
     obj_files: Iterable[Path],
 ) -> RequiresContextIOResultE[Path, _BuilderConfig]:
-    def _inner(context: _BuilderConfig):
+    def _inner_build_bin_file(context: _BuilderConfig):
         return flow(
             obj_files,
             link_exe if Path(context.src, "main.c").exists() else link_lib,
@@ -112,7 +140,9 @@ def _build_bin_file(
             bind(_build_command_run_with_context),
         )
 
-    return RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(_inner)
+    return (
+        RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(_inner_build_bin_file)
+    )
 
 
 def build_bin(

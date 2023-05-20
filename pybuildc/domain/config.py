@@ -68,6 +68,5 @@ def parse_config(config: dict[str, Any]) -> Config:
     }
 
 
-
 def load_config(config_path: Path) -> IOResultE[Config]:
     return load_config_file(config_path).map(parse_config)
