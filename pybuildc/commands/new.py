@@ -33,11 +33,12 @@ int main(void) {{ printf("Project: " LIBNAME "\\n"); }}
 [project]
 name="{args.directory.name}"
 version="0.1.0"
+cc="gcc"
 """,
     )
 
     _create_file(
-        Path(args.directory, "test", "main-test.c"),
+        Path(args.directory, "tests", "main-test.c"),
         f"""\
 #include "{args.directory.name}.h"
 #include <stdio.h>
