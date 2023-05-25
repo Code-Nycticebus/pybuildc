@@ -83,10 +83,6 @@ def _build_command_run_all_concurrent_with_context(
     )
 
 
-def display_build_command(cmds: Iterable[CompileCommand], name: str):
-    for cmd in cmds:
-        print(f"Building {name}: {cmd.output_path}")
-        yield cmd
 
 
 def display_with_context(
@@ -94,7 +90,7 @@ def display_with_context(
 ) -> RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]:
     def _inner_display_with_context(context: _BuilderConfig):
         for cmd in cmds:
-            print(f"Building: {cmd.output_path}")
+            print(f"Building: {cmd.output_path.relative_to(context.build)}")
             if context.verbose:
                 print(" ".join(cmd.command))
             yield cmd
