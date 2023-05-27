@@ -21,6 +21,7 @@ from pybuildc.domain.compiler import (
 class _BuilderConfig(Protocol):
     src: Path
     tests: Path
+    build: Path
 
     verbose: bool
 
@@ -81,8 +82,6 @@ def _build_command_run_all_concurrent_with_context(
             )
         )
     )
-
-
 
 
 def display_with_context(
