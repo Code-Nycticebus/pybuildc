@@ -17,6 +17,7 @@ def run_all_tests(
     succ: tuple[Path, ...] = ()
 
     for test in tests:
+        print(f"Running {test}")
         ret = subprocess.run((str(test), *argv))
         if ret.returncode == 0:
             succ += (test,)

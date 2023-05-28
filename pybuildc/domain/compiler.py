@@ -161,7 +161,10 @@ def compile_all_test_files(
                         context.build, "tests", test_file.relative_to(context.tests)
                     ).with_suffix(""),
                 )(context),
-                context.tests.rglob("*-test.c"),
+                sorted(
+                    context.tests.rglob("*-test.c"),
+                    key=lambda file: file.stat().st_mtime,
+                ),
             )
         )
 
