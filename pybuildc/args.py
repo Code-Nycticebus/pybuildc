@@ -38,7 +38,6 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
 
     build_parser = subparser.add_parser("build", help="Builds the project")
     build_parser.add_argument(
-        "-r",
         "--release",
         help="Enables optimizations and removes debug flags",
         action="store_true",
@@ -48,7 +47,6 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         "run", help="Builds the project and runs the binary"
     )
     run_parser.add_argument(
-        "-r",
         "--release",
         help="Enables optimizations and removes debug flags",
         action="store_true",
@@ -58,8 +56,6 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         "test",
         help="Builds and runs tests in 'tests' folder. '*-test.c' is treated as the 'main' file.",
     )
-    test_parser.add_argument(
-        "-f", "--file", help="Runs only one specific '*-test.c' file."
-    )
+    test_parser.add_argument("--file", help="Runs only one specific '*-test.c' file.")
 
     return parser.parse_known_args(args)
