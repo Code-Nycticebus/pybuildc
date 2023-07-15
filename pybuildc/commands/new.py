@@ -34,7 +34,7 @@ int main(void) {{ printf("Project: " LIBNAME "\\n"); }}
 name="{args.directory.name}"
 version="0.1.0"
 cc="gcc"
-bin="lib"
+bin={"static" if args.lib else "exe"}
 """,
     )
 
@@ -44,6 +44,14 @@ bin="lib"
 #include "{args.directory.name}.h"
 #include <stdio.h>
 int main(void) {{ printf("Test: " LIBNAME "\\n"); }}
+""",
+    )
+
+    _create_file(
+        Path(args.directory, ".clangd"),
+        """\
+CompileFlags:
+    CompilationDatabase: "./.build/"
 """,
     )
 

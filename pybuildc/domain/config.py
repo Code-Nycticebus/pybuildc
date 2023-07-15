@@ -42,7 +42,6 @@ def create_project_config(config: dict[str, Any]) -> ProjectConfig:
     return ProjectConfig(  # type: ignore
         warnings=config.pop("warnings", True),
         cflags=config.pop("cflags", tuple()),
-        bin="exe",
         **config,
     )
 
