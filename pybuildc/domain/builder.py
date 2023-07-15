@@ -1,3 +1,5 @@
+from itertools import chain
+import json
 from pathlib import Path
 import subprocess
 from typing import Iterable, Protocol
@@ -11,6 +13,8 @@ from returns.pointfree import bind
 
 from pybuildc.domain.compiler import (
     CompileCommand,
+    _create_path,
+    compile,
     compile_all_obj_files,
     compile_all_test_files,
     link_exe,
@@ -176,3 +180,25 @@ def build_test_files(context) -> IOResultE[tuple[Path, ...]]:
         _build_obj_files,
         bind(_build_test_files),
     )(context)
+
+
+def build_compile_commands(context):
+    compile_commands = list()
+
+    for file in chain(context.src.rglob("*.c"), context.tests.rglob("*-test.c")):
+        command = compile([file], context.build / file.with_suffix(".o").name)(context)
+
+        compile_commands.append(
+            {
+                "file": str(file.relative_to(context.project)),
+                "directory": str(context.project),
+                "arguments": command.command,
+            }
+        )
+
+    with open(
+        _create_path(context.project, ".build", "compile_commands.json"), "w"
+    ) as f:
+        json.dump(compile_commands, f)
+
+    return context

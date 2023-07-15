@@ -34,7 +34,7 @@ int main(void) {{ printf("Project: " LIBNAME "\\n"); }}
 name="{args.directory.name}"
 version="0.1.0"
 cc="gcc"
-bin={"static" if args.lib else "exe"}
+bin="{"static" if args.lib else "exe"}"
 """,
     )
 
@@ -51,7 +51,7 @@ int main(void) {{ printf("Test: " LIBNAME "\\n"); }}
         Path(args.directory, ".clangd"),
         """\
 CompileFlags:
-    CompilationDatabase: "./.build/"
+    CompilationDatabase: ".build/"
 """,
     )
 
