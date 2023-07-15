@@ -13,7 +13,7 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         "-d",
         "--directory",
         help="directory to build",
-        type=Path,
+        type=lambda value: Path(value).absolute(),
         default=Path.cwd(),
     )
     subparser = parser.add_subparsers(
