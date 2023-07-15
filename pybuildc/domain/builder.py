@@ -14,7 +14,8 @@ from pybuildc.domain.compiler import (
     compile_all_obj_files,
     compile_all_test_files,
     link_exe,
-    link_lib,
+    link_shared,
+    link_static,
 )
 
 
@@ -22,6 +23,7 @@ class _BuilderConfig(Protocol):
     src: Path
     tests: Path
     build: Path
+    bin: str
 
     verbose: bool
 
@@ -130,7 +132,11 @@ def _build_bin_file(
     def _inner_build_bin_file(context: _BuilderConfig):
         return flow(
             obj_files,
-            link_exe if Path(context.src, "main.c").exists() else link_lib,
+            link_shared
+            if context.bin == "shared"
+            else link_static
+            if context.bin == "static"
+            else link_exe,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
             bind(_build_command_run_with_context),
         )

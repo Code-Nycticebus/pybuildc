@@ -7,7 +7,7 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
     parser = argparse.ArgumentParser(
         description="A build system for the c language",
     )
-    parser.add_argument("-V", "--version", action="version", version=__version__)
+    parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("-v", "--verbose", action="count", default=0)
     parser.add_argument(
         "-d",

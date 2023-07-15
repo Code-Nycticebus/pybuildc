@@ -19,6 +19,7 @@ class ProjectConfig(TypedDict):
     cc: str
     warnings: bool
     cflags: tuple[str, ...]
+    bin: str
 
 
 class Config(TypedDict):
