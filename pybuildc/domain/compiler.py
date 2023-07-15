@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-import subprocess
 from typing import Iterable, Protocol
 
 from returns.context import RequiresContext
