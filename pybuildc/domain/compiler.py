@@ -108,7 +108,7 @@ def link_shared(
     def _inner_link_exe(context):
         return compile(
             obj_files,
-            _create_path(context.build, "bin", context.name).with_suffix(".so"),
+            _create_path(context.build, "bin", f"lib{context.name}.so"),
             shared=True,
         )
 
@@ -121,7 +121,7 @@ def link_static(
     """Links all obj files to a static library using ar"""
 
     def _inner_link_lib(context: _CompilerConfig):
-        output_path = _create_path(context.build, "bin", context.name).with_suffix(".a")
+        output_path = _create_path(context.build, "bin", f"lib{context.name}.a")
         return CompileCommand(
             output_path=output_path,
             command=(
@@ -164,7 +164,7 @@ def compile_all_obj_files(
 
 
 def compile_all_test_files(
-    obj_files: Iterable[Path],
+    obj_files: Path,
 ) -> RequiresContext[tuple[CompileCommand, ...], _CompilerConfig]:
     """Compiles test files. It takes the obj_files that need to be included and returns the commands to compile all tests."""
 
@@ -172,7 +172,7 @@ def compile_all_test_files(
         return tuple(
             map(
                 lambda test_file: compile(
-                    (test_file, *obj_files),
+                    (test_file, obj_files),
                     _create_path(
                         context.build, "tests", test_file.relative_to(context.tests)
                     ).with_suffix(""),

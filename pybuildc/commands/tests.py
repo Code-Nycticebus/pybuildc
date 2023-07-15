@@ -5,7 +5,7 @@ from typing import Iterable
 from returns.curry import partial
 from returns.io import IOResultE
 
-from pybuildc.domain.builder import build_test_files
+from pybuildc.domain.builder import build_compile_commands, build_test_files
 from pybuildc.domain.context import BuildContext
 
 
@@ -33,6 +33,7 @@ def run_all_tests(
 def test(args, argv) -> IOResultE[int]:
     return (
         BuildContext.create_from_config(args.directory, "debug", args.verbose)
+        .map(build_compile_commands)
         .bind(build_test_files)
         .bind(partial(run_all_tests, argv=argv))
         .map(lambda _: 0)
