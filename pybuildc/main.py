@@ -1,3 +1,4 @@
+import os
 from subprocess import CalledProcessError
 import sys
 
@@ -25,6 +26,7 @@ def error(e: Exception) -> int:
 
 
 def pybuildc(args, argv) -> IOResultE[int]:
+    os.chdir(args.directory)
     match args.action:
         case "new":
             return commands.new(args)
