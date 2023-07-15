@@ -9,7 +9,7 @@ from returns.context import RequiresContextIOResultE
 from returns.io import IOResultE
 from returns.iterables import Fold
 from returns.pipeline import flow
-from returns.pointfree import bind
+from returns.pointfree import bind, map_
 
 from pybuildc.domain.compiler import (
     CompileCommand,
@@ -24,6 +24,7 @@ from pybuildc.domain.compiler import (
 
 
 class _BuilderConfig(Protocol):
+    name: str
     src: Path
     tests: Path
     build: Path
@@ -161,12 +162,32 @@ def build_bin(
 
 
 def _build_test_files(
-    obj_files: Iterable[Path],
+    obj_files: CompileCommand,
 ) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
-    def _inner(_: _BuilderConfig):
+    def _inner(context: _BuilderConfig):
+        def strip_main(lib_name):
+            new_name = _create_path(
+                context.build,
+                "tests",
+                f"{lib_name.with_suffix('').name}-test.a",
+            )
+
+            subprocess.run(
+                [
+                    "objcopy",
+                    "--redefine-sym",
+                    f"main={context.name}_main",
+                    str(lib_name),
+                    str(new_name),
+                ]
+            )
+            return new_name
+
         return flow(
             obj_files,
-            compile_all_test_files,
+            _build_command_run,
+            map_(strip_main),
+            bind(compile_all_test_files),
             RequiresContextIOResultE.from_context,  # Needed because "compile_all_test_files()" returns a "RequiresContext"
             bind(_build_command_run_all_concurrent_with_context),
         )
@@ -176,8 +197,10 @@ def _build_test_files(
 
 def build_test_files(context) -> IOResultE[tuple[Path, ...]]:
     return flow(
-        tuple(filter(lambda file: file.name != "main.c", context.src.rglob("*.c"))),
+        tuple(context.src.rglob("*.c")),
         _build_obj_files,
+        bind(link_static),
+        RequiresContextIOResultE.from_context,  # Needed because "compile_all_test_files()" returns a "RequiresContext"
         bind(_build_test_files),
     )(context)
 
