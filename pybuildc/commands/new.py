@@ -34,6 +34,7 @@ int main(void) {{ printf("Project: " LIBNAME "\\n"); }}
 name="{args.directory.name}"
 version="0.1.0"
 cc="gcc"
+bin="lib"
 """,
     )
 

@@ -21,6 +21,8 @@ class BuildContext:
     version: str
     verbose: bool
 
+    bin: str
+
     cc: str
     warnings: bool
     cflags: tuple[str, ...]

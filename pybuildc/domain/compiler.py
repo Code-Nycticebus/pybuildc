@@ -69,7 +69,7 @@ def _create_obj_file_path(file: Path) -> RequiresContext[Path, _CompilerConfig]:
 
 
 def compile(
-    obj_files, output_path, obj=False
+    obj_files, output_path, obj=False, shared=False
 ) -> RequiresContext[CompileCommand, _CompilerConfig]:
     return RequiresContext(
         lambda context: CompileCommand(
@@ -83,6 +83,7 @@ def compile(
                 "-o",
                 str(output_path),
                 *(("-c",) if obj else context.library_flags),
+                *(("--shared",) if shared else ()),
             ),
         )
     )
@@ -99,7 +100,22 @@ def link_exe(
     return RequiresContext[CompileCommand, _CompilerConfig].ask().bind(_inner_link_exe)
 
 
-def link_lib(
+def link_shared(
+    obj_files: Iterable[Path],
+) -> RequiresContext[CompileCommand, _CompilerConfig]:
+    """Links all obj files to a exe usin the cc"""
+
+    def _inner_link_exe(context):
+        return compile(
+            obj_files,
+            _create_path(context.build, "bin", context.name).with_suffix(".so"),
+            shared=True,
+        )
+
+    return RequiresContext[CompileCommand, _CompilerConfig].ask().bind(_inner_link_exe)
+
+
+def link_static(
     obj_files: Iterable[Path],
 ) -> RequiresContext[CompileCommand, _CompilerConfig]:
     """Links all obj files to a static library using ar"""
