@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Any, TypedDict
-from itertools import chain
 import toml
 
 from returns.io import IOResultE, impure_safe
