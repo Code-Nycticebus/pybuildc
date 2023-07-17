@@ -49,12 +49,12 @@ def create_project_config(config: dict[str, Any]) -> ProjectConfig:
 def create_dependecy_config(config: dict[str, Any]) -> DependencyConfig:
     return DependencyConfig(
         # iterate over 'config' library names as keys, chain all the Iterables toghether and create a tuple.
-        include_flags=tuple(chain(*(v.get("include", ()) for v in config.values()))),
+        include_flags=tuple(map(lambda p: f"-I{Path(p)}", chain(*(v.get("include", ()) for v in config.values())))),
         # iterate over 'config' library names as keys, chain the directory and the library flag and create a tuple
         library_flags=tuple(
             chain(
                 *(
-                    (v["dir"], v["lib"]) if "dir" in v else (v["lib"],)
+                    (f"-L{Path(v['dir'])}", f"-l{v['lib']}") if "dir" in v else (f"-l{v['lib']}",)
                     for v in config.values()
                 )
             )
