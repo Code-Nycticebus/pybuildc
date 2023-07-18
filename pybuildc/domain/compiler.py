@@ -36,7 +36,7 @@ DEBUG_FLAGS = (
     "-fPIC",
 )
 
-RELEASE_FLAGS = ("-O2",)
+RELEASE_FLAGS = ("-O2", "-DNDEBUG")
 
 
 class _CompilerConfig(Protocol):
