@@ -16,9 +16,9 @@ class CompileCommand:
     command: tuple[str, ...]
 
 
-RELEASE_WARNINGS = ("-Wall", "-Wpedantic")
+RELEASE_FLAGS = ("-Wall", "-Wpedantic", "-O2", "-DNDEBUG")
 
-DEBUG_WARNINGS = (
+DEBUG_FLAGS = (
     "-Wall",
     "-Wextra",
     "-Werror",
@@ -27,16 +27,6 @@ DEBUG_WARNINGS = (
     "-Wnull-dereference",
     "-Wformat=2",
 )
-
-# TODO some way to disable sanitizer
-DEBUG_FLAGS = (
-    "-ggdb",
-    "-fsanitize=address,undefined,leak",
-    "-fno-omit-frame-pointer",
-    "-fPIC",
-)
-
-RELEASE_FLAGS = ("-O2", "-DNDEBUG")
 
 
 class _CompilerConfig(Protocol):
@@ -77,7 +67,7 @@ def compile(
             command=(
                 context.cc,
                 *context.include_flags,
-                *(DEBUG_WARNINGS if context.warnings else ()),
+                *(DEBUG_FLAGS if context.warnings or context else RELEASE_FLAGS),
                 *context.cflags,
                 *map(str, obj_files),
                 "-o",
