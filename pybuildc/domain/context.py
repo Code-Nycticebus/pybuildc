@@ -21,10 +21,11 @@ class BuildContext:
     version: str
     verbose: bool
 
+    release: bool
+
     bin: str
 
     cc: str
-    warnings: bool
     cflags: tuple[str, ...]
     include_flags: tuple[str, ...]
     library_flags: tuple[str, ...]
@@ -38,7 +39,7 @@ class BuildContext:
 
     @classmethod
     def create_from_config(
-        cls, directory: Path, target: str, verbose: bool
+        cls, directory: Path, release: bool, verbose: bool
     ) -> IOResultE:
         return load_config(Path(directory, "pybuildc.toml")).map(
             lambda config: cls(
@@ -47,7 +48,8 @@ class BuildContext:
                 library_flags=config["deps"]["library_flags"],
                 cache=dict(),
                 verbose=verbose,
+                release=release,
                 **config["project"],
-                **get_project_structure(directory, target),
+                **get_project_structure(directory, "release" if release else "debug"),
             )
         )

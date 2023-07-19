@@ -16,7 +16,12 @@ class CompileCommand:
     command: tuple[str, ...]
 
 
-RELEASE_FLAGS = ("-Wall", "-Wpedantic", "-O2", "-DNDEBUG")
+RELEASE_FLAGS = (
+    "-Wall",
+    "-Wpedantic",
+    "-O2",
+    "-DNDEBUG",
+)
 
 DEBUG_FLAGS = (
     "-Wall",
@@ -32,11 +37,12 @@ DEBUG_FLAGS = (
 class _CompilerConfig(Protocol):
     name: str
 
+    release: bool
+
     cc: str
     cflags: Iterable[str]
     include_flags: Iterable[str]
     library_flags: Iterable[str]
-    warnings: bool
 
     build: Path
     src: Path
@@ -67,7 +73,7 @@ def compile(
             command=(
                 context.cc,
                 *context.include_flags,
-                *(DEBUG_FLAGS if context.warnings or context else RELEASE_FLAGS),
+                *(RELEASE_FLAGS if context.release else DEBUG_FLAGS),
                 *context.cflags,
                 *map(str, obj_files),
                 "-o",
