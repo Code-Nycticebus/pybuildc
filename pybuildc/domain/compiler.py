@@ -24,6 +24,7 @@ RELEASE_FLAGS = (
 )
 
 DEBUG_FLAGS = (
+    "-g",
     "-Wall",
     "-Wextra",
     "-Werror",
