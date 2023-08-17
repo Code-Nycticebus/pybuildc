@@ -26,15 +26,17 @@ def error(e: Exception) -> int:
 
 
 def pybuildc(args, argv) -> IOResultE[int]:
-    os.chdir(args.directory)
     match args.action:
         case "new":
             return commands.new(args)
         case "build":
+            os.chdir(args.directory)
             return commands.build(args)
         case "run":
+            os.chdir(args.directory)
             return commands.run(args, argv)
         case "test":
+            os.chdir(args.directory)
             return commands.test(args, argv)
         case action:
             return IOFailure(

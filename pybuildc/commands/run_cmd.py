@@ -6,9 +6,7 @@ from pybuildc.domain.context import BuildContext
 
 def run(args, argv) -> IOResultE[int]:
     return (
-        BuildContext.create_from_config(
-            args.directory, "release" if args.release else "debug", args.verbose
-        )
+        BuildContext.create_from_config(args.directory, args.release, args.verbose)
         .bind(
             lambda context: IOSuccess(context)
             if context.bin == "exe"
