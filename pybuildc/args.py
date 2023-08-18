@@ -21,6 +21,11 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         help="Enables optimizations and removes debug flags",
         action="store_true",
     )
+    parser.add_argument(
+        "--debug",
+        help="Enables optimizations and removes debug flags",
+        action="store_false",
+    )
     subparser = parser.add_subparsers(
         dest="action",
         required=True,
