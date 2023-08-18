@@ -31,6 +31,18 @@ int main(void) {{ printf("Project: " {args.directory.name.capitalize()} "\\n"); 
 """,
         )
 
+    Path(args.directory, "deps").mkdir()
+
+    _create_file(
+        Path(args.directory, ".gitignore"),
+        f"""\
+.build
+deps/*/*-linux/
+deps/*/*-win/
+""",
+    )
+
+
     _create_file(
         Path(args.directory, "pybuildc.toml"),
         f"""\
