@@ -16,6 +16,11 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         type=lambda value: Path(value).absolute(),
         default=Path.cwd(),
     )
+    parser.add_argument(
+        "--release",
+        help="Enables optimizations and removes debug flags",
+        action="store_true",
+    )
     subparser = parser.add_subparsers(
         dest="action",
         required=True,
@@ -37,19 +42,9 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
     )
 
     build_parser = subparser.add_parser("build", help="Builds the project")
-    build_parser.add_argument(
-        "--release",
-        help="Enables optimizations and removes debug flags",
-        action="store_true",
-    )
 
     run_parser = subparser.add_parser(
         "run", help="Builds the project and runs the binary"
-    )
-    run_parser.add_argument(
-        "--release",
-        help="Enables optimizations and removes debug flags",
-        action="store_true",
     )
 
     test_parser = subparser.add_parser(

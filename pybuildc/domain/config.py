@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, TypedDict
 import toml
+import platform
 
 from returns.io import IOResultE, impure_safe
 from returns.maybe import maybe
@@ -32,7 +33,9 @@ def get(d: dict, key: Any) -> Any:
 
 @impure_safe
 def load_config_file(config_path: Path):
-    return toml.loads(config_path.read_text())
+    dic = toml.loads(config_path.read_text())
+    dic["project_dir"] = config_path.parent
+    return dic
 
 
 def create_project_config(config: dict[str, Any]) -> ProjectConfig:
@@ -43,7 +46,7 @@ def create_project_config(config: dict[str, Any]) -> ProjectConfig:
     )
 
 
-def handle_dependencies_config(config: dict[str, Any]):
+def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
     include_flags = []
     library_flags = []
 
@@ -65,17 +68,16 @@ def handle_dependencies_config(config: dict[str, Any]):
         match val.get("dep_type", "static"):
             case "static":
                 library_flags.extend(
-                    (f"-L{Path(val['dir']).absolute()}", f"-l{val['lib']}")
+                    (f"-L{Path(project_dir, val['dir']).absolute().resolve()}", f"-l{val['lib']}")
                     if "dir" in val
                     else (f"-l{val['lib']}",)
                 )
 
             case "pybuildc":
-                project_dir = Path(val["dir"])
-
-                load_config_file(project_dir / "pybuildc.toml").map(parse_config).map(
+                sub_project_path = Path(val["dir"])
+                load_config(sub_project_path / "pybuildc.toml").map(
                     lambda c: recursive_adding(
-                        project_dir, c, val.get("target", "release")
+                        sub_project_path, c, val.get("target", "release")
                     )
                 ).unwrap()
 
@@ -85,10 +87,13 @@ def handle_dependencies_config(config: dict[str, Any]):
     return tuple(include_flags), tuple(library_flags)
 
 
-def create_dependecy_config(config: dict[str, Any]) -> DependencyConfig:
-    include_flags, library_flags = handle_dependencies_config(config)
+def create_dependecy_config(project_dir: Path, config: dict[str, Any]) -> DependencyConfig:
+    config.update(config.pop(platform.system().lower(), dict()))
+    config.pop("windows", None)
+    config.pop("linux", None)
+    include_flags, library_flags = handle_dependencies_config(project_dir, config)
     return DependencyConfig(
-        # iterate over 'config' library names as keys, chain all the Iterables toghether and create a tuple.
+        # iterate over 'config' library names as keys, chain all the Iterables together and create a tuple.
         include_flags=include_flags,
         library_flags=library_flags,
     )
@@ -97,7 +102,7 @@ def create_dependecy_config(config: dict[str, Any]) -> DependencyConfig:
 def parse_config(config: dict[str, Any]) -> Config:
     return {
         "project": create_project_config(config["project"]),
-        "deps": create_dependecy_config(config.get("dependencies", dict())),
+        "deps": create_dependecy_config(config["project_dir"], config.get("dependencies", dict())),
     }
 
 
