@@ -42,7 +42,6 @@ deps/*/*-win/
 """,
     )
 
-
     _create_file(
         Path(args.directory, "pybuildc.toml"),
         f"""\

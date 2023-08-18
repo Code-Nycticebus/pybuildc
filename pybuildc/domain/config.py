@@ -68,7 +68,10 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
         match val.get("dep_type", "static"):
             case "static":
                 library_flags.extend(
-                    (f"-L{Path(project_dir, val['dir']).absolute().resolve()}", f"-l{val['lib']}")
+                    (
+                        f"-L{Path(project_dir, val['dir']).absolute().resolve()}",
+                        f"-l{val['lib']}",
+                    )
                     if "dir" in val
                     else (f"-l{val['lib']}",)
                 )
@@ -87,7 +90,9 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
     return tuple(include_flags), tuple(library_flags)
 
 
-def create_dependecy_config(project_dir: Path, config: dict[str, Any]) -> DependencyConfig:
+def create_dependecy_config(
+    project_dir: Path, config: dict[str, Any]
+) -> DependencyConfig:
     config.update(config.pop(platform.system().lower(), dict()))
     config.pop("windows", None)
     config.pop("linux", None)
@@ -102,7 +107,9 @@ def create_dependecy_config(project_dir: Path, config: dict[str, Any]) -> Depend
 def parse_config(config: dict[str, Any]) -> Config:
     return {
         "project": create_project_config(config["project"]),
-        "deps": create_dependecy_config(config["project_dir"], config.get("dependencies", dict())),
+        "deps": create_dependecy_config(
+            config["project_dir"], config.get("dependencies", dict())
+        ),
     }
 
 
