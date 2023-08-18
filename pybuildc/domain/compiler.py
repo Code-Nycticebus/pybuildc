@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Protocol
+import platform
 
 from returns.context import RequiresContext
 from returns.pipeline import flow
@@ -118,7 +119,7 @@ def link_static(
     """Links all obj files to a static library using ar"""
 
     def _inner_link_lib(context: _CompilerConfig):
-        output_path = _create_path(context.build, "bin", f"lib{context.name}.a")
+        output_path = _create_path(context.build, "bin", f"lib{context.name}.a" if platform.system() == "linux" else f"{context.name}.lib")
         return CompileCommand(
             output_path=output_path,
             command=(
@@ -126,6 +127,10 @@ def link_static(
                 "rcs",
                 str(output_path),
                 *map(str, obj_files),
+            ) if platform.system().lower() == "linux" else (
+                "lib", 
+                f"/OUT:{output_path}", 
+                *map(str, obj_files)
             ),
         )
 

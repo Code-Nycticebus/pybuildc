@@ -37,7 +37,7 @@ int main(void) {{ printf("Project: " {args.directory.name.capitalize()} "\\n"); 
 [project]
 name="{args.directory.name}"
 version="0.1.0"
-cc="gcc"
+cc="clang"
 bin="{"static" if args.lib else "exe"}"
 """,
     )

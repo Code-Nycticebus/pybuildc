@@ -2,6 +2,7 @@ from itertools import chain
 import json
 from pathlib import Path
 import subprocess
+import os
 from typing import Iterable, Protocol
 from concurrent import futures
 
@@ -36,8 +37,12 @@ class _BuilderConfig(Protocol):
 def _build_command_run(
     cmd: CompileCommand,
 ) -> IOResultE[Path]:
-    if subprocess.run(cmd.command).returncode != 0:
-        return IOResultE.from_failure(Exception(cmd.command))
+    try:
+        if subprocess.run(cmd.command).returncode != 0:
+            return IOResultE.from_failure(Exception(cmd.command))
+    except FileNotFoundError as e:
+        raise Exception(f"Command '{cmd.command[0]}' not found!")
+
     return IOResultE.from_value(cmd.output_path)
 
 
