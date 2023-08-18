@@ -79,14 +79,15 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
             case "pybuildc":
                 sub_project_path = Path(val["dir"])
                 target = val.get("target", "release")
+                if not (sub_project_path/".build"/target).exists() or val.get("build", False):
+                    import subprocess
+                    subprocess.run(["pybuildc", f"--{target}", "-d", str(sub_project_path), "build"])
                 load_config(sub_project_path / "pybuildc.toml").map(
                     lambda c: recursive_adding(
                         sub_project_path, c, target
                     )
                 ).unwrap()
-                if val.get("build", False):
-                    import subprocess
-                    subprocess.run(["pybuildc", f"--{target}", "-d", str(sub_project_path), "build"])
+
 
             case n:
                 raise ValueError(n)
