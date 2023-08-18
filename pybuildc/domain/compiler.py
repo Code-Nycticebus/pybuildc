@@ -13,6 +13,7 @@ from returns.curry import partial
 class CompileCommand:
     """The Return value type of the compile function"""
 
+    input_files: list[Path]
     output_path: Path
     command: tuple[str, ...]
 
@@ -71,6 +72,7 @@ def compile(
 ) -> RequiresContext[CompileCommand, _CompilerConfig]:
     return RequiresContext(
         lambda context: CompileCommand(
+            input_files=obj_files,
             output_path=output_path,
             command=(
                 context.cc,
@@ -132,6 +134,7 @@ def link_static(
             else f"{context.name}.lib",
         )
         return CompileCommand(
+            input_files=obj_files,
             output_path=output_path,
             command=(
                 "ar",

@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 from typing import Iterable, Protocol
 from concurrent import futures
+import pickle
 
 from returns.context import RequiresContextIOResultE
 from returns.io import IOResultE
@@ -33,6 +34,10 @@ class _BuilderConfig(Protocol):
     verbose: bool
 
 
+def _needs_recompilation(config: _BuilderConfig, file: Path):
+    return config.get(file, 0) < file.stat().st_mtime
+
+
 def _build_command_run(
     cmd: CompileCommand,
 ) -> IOResultE[Path]:
@@ -46,9 +51,11 @@ def _build_command_run(
 
 
 def _build_command_run_with_context(cmd: CompileCommand):
-    def inner(_: _BuilderConfig):
-        return RequiresContextIOResultE.from_ioresult(_build_command_run(cmd))
-
+    def inner(config: _BuilderConfig):
+        if _needs_recompilation(config.cache, cmd.input_files[0]):
+            return RequiresContextIOResultE.from_ioresult(_build_command_run(cmd))
+        else:
+            return RequiresContextIOResultE.from_value(cmd.output_path)
     return RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(inner)
 
 
@@ -94,6 +101,24 @@ def _build_command_run_all_concurrent_with_context(
         )
     )
 
+def _register_file_in_cache(
+    cmds: Iterable[CompileCommand],
+) -> RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]:
+    def _inner_register_file_in_cache(context: _BuilderConfig):
+        cache = {}
+        for cmd in cmds:
+            if cmd.input_files[0].suffix == ".c":
+                cache[cmd.input_files[0]] = cmd.input_files[0].stat().st_mtime
+            yield cmd
+
+        with (context.build / "cache").open("wb") as f:
+            pickle.dump(cache, f)
+
+    return (
+        RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]
+        .ask()
+        .map(_inner_register_file_in_cache)
+    )
 
 def display_with_context(
     cmds: Iterable[CompileCommand],
@@ -121,6 +146,7 @@ def _build_obj_files(
             compile_all_obj_files,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
             bind(display_with_context),
+            bind(_register_file_in_cache),
             bind(
                 _build_command_run_all_concurrent_with_context
                 if len(src_files) > 10
