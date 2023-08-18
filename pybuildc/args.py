@@ -28,7 +28,6 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
     )
 
     new_parser = subparser.add_parser("new", help="Creates a new project")
-    # makes directory a required argument
     new_parser.add_argument(
         "directory",
         help="Name of the new project directory",
@@ -41,11 +40,8 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         default=False,
     )
 
-    build_parser = subparser.add_parser("build", help="Builds the project")
-
-    run_parser = subparser.add_parser(
-        "run", help="Builds the project and runs the binary"
-    )
+    subparser.add_parser("build", help="Builds the project")
+    subparser.add_parser("run", help="Builds the project and runs the binary")
 
     test_parser = subparser.add_parser(
         "test",

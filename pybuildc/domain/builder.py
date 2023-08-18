@@ -2,7 +2,6 @@ from itertools import chain
 import json
 from pathlib import Path
 import subprocess
-import os
 from typing import Iterable, Protocol
 from concurrent import futures
 
@@ -41,8 +40,8 @@ def _build_command_run(
         if subprocess.run(cmd.command).returncode != 0:
             return IOResultE.from_failure(Exception(cmd.command))
     except FileNotFoundError as e:
-        raise Exception(f"Command '{cmd.command[0]}' not found!")
-
+        e.add_note(f"Command '{cmd.command[0]}' not found!")
+        raise
     return IOResultE.from_value(cmd.output_path)
 
 
