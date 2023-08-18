@@ -55,6 +55,9 @@ def _build_command_run(
 def _build_command_run_with_context(cmd: CompileCommand):
     def inner(config: _BuilderConfig):
         if _needs_recompilation(config.cache, cmd.input_files[0]):
+            print(f"Building: {cmd.output_path.relative_to(config.build)}")
+            if config.verbose:
+                print(" ".join(cmd.command))
             return RequiresContextIOResultE.from_ioresult(_build_command_run(cmd))
         else:
             return RequiresContextIOResultE.from_value(cmd.output_path)
@@ -125,23 +128,6 @@ def _register_file_in_cache(
     )
 
 
-def display_with_context(
-    cmds: Iterable[CompileCommand],
-) -> RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]:
-    def _inner_display_with_context(context: _BuilderConfig):
-        for cmd in cmds:
-            print(f"Building: {cmd.output_path.relative_to(context.build)}")
-            if context.verbose:
-                print(" ".join(cmd.command))
-            yield cmd
-
-    return (
-        RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]
-        .ask()
-        .map(_inner_display_with_context)
-    )
-
-
 def _build_obj_files(
     src_files: tuple[Path, ...],
 ) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
@@ -150,7 +136,6 @@ def _build_obj_files(
             src_files,
             compile_all_obj_files,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
-            bind(display_with_context),
             bind(_register_file_in_cache),
             bind(
                 _build_command_run_all_concurrent_with_context
