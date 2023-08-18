@@ -13,7 +13,7 @@ from returns.curry import partial
 class CompileCommand:
     """The Return value type of the compile function"""
 
-    input_files: list[Path]
+    input_files: tuple[Path, ...]
     output_path: Path
     command: tuple[str, ...]
 
@@ -121,7 +121,7 @@ def link_shared(
 
 
 def link_static(
-    obj_files: Iterable[Path],
+    obj_files: tuple[Path, ...],
 ) -> RequiresContext[CompileCommand, _CompilerConfig]:
     """Links all obj files to a static library using ar"""
 

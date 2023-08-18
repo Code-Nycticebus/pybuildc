@@ -31,11 +31,13 @@ class _BuilderConfig(Protocol):
     build: Path
     bin: str
 
+    cache: dict[Path, float]
+
     verbose: bool
 
 
-def _needs_recompilation(config: _BuilderConfig, file: Path):
-    return config.get(file, 0) < file.stat().st_mtime
+def _needs_recompilation(cache: dict[Path, float], file: Path):
+    return cache.get(file, 0) < file.stat().st_mtime
 
 
 def _build_command_run(
@@ -56,6 +58,7 @@ def _build_command_run_with_context(cmd: CompileCommand):
             return RequiresContextIOResultE.from_ioresult(_build_command_run(cmd))
         else:
             return RequiresContextIOResultE.from_value(cmd.output_path)
+
     return RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(inner)
 
 
@@ -101,6 +104,7 @@ def _build_command_run_all_concurrent_with_context(
         )
     )
 
+
 def _register_file_in_cache(
     cmds: Iterable[CompileCommand],
 ) -> RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]:
@@ -119,6 +123,7 @@ def _register_file_in_cache(
         .ask()
         .map(_inner_register_file_in_cache)
     )
+
 
 def display_with_context(
     cmds: Iterable[CompileCommand],

@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, TypedDict
 import toml
 import platform
+import subprocess
 
 from returns.io import IOResultE, impure_safe
 from returns.maybe import maybe
@@ -79,15 +80,22 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
             case "pybuildc":
                 sub_project_path = Path(val["dir"])
                 target = val.get("target", "release")
-                if not (sub_project_path/".build"/target).exists() or val.get("build", False):
-                    import subprocess
-                    subprocess.run(["pybuildc", f"--{target}", "-d", str(sub_project_path), "build"])
-                load_config(sub_project_path / "pybuildc.toml").map(
-                    lambda c: recursive_adding(
-                        sub_project_path, c, target
+                if (
+                    val.get("build", False)
+                    or not (sub_project_path / ".build" / target).exists()
+                ):
+                    subprocess.run(
+                        [
+                            "pybuildc",
+                            f"--{target}",
+                            "-d",
+                            str(sub_project_path),
+                            "build",
+                        ]
                     )
+                load_config(sub_project_path / "pybuildc.toml").map(
+                    lambda c: recursive_adding(sub_project_path, c, target)
                 ).unwrap()
-
 
             case n:
                 raise ValueError(n)

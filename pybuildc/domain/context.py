@@ -3,7 +3,6 @@ from pathlib import Path
 import pickle
 
 from returns.io import IOResultE
-from returns.result import ResultE, safe
 
 from pybuildc.domain.config import load_config
 
@@ -16,13 +15,13 @@ def get_project_structure(directory: Path, target: str):
         "tests": Path(directory, "tests"),
     }
 
+
 def get_cache(directory: Path, target: str) -> dict[Path, float]:
     cache_file = directory / ".build" / target / "cache"
     try:
         with cache_file.open("rb") as f:
             return pickle.load(f)
-    except FileNotFoundError as e:
-        print(cache_file)
+    except FileNotFoundError:
         return dict()
 
 
