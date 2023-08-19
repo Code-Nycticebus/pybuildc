@@ -106,11 +106,6 @@ def link_shared(
 ) -> RequiresContext[CompileCommand, _CompilerConfig]:
     """Links all obj files to a exe usin the cc"""
 
-    if platform.system() == "Windows":
-        raise NotImplementedError(
-            "Building shared library on Windows currently not supported"
-        )
-
     def _inner_link_exe(context):
         bin_path = _create_path(context.build, "bin", f"lib{context.name}.so" if platform.system() == "Linux" else f"{context.name}.dll")
         return compile(
