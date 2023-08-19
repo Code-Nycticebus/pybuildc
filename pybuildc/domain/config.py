@@ -78,7 +78,7 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
                 )
 
             case "pybuildc":
-                sub_project_path = Path(val["dir"])
+                sub_project_path = Path(project_dir, val["dir"]).absolute().resolve()
                 target = val.get("target", "release")
                 if (
                     val.get("build", False)
