@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 import subprocess
 from typing import Iterable, Protocol
-from concurrent import futures
 import pickle
 
 from returns.context import RequiresContextIOResultE
@@ -79,35 +78,6 @@ def _build_command_run_all_with_context(
     return RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig].ask().bind(inner)
 
 
-def _build_command_run_all_concurrent(
-    cmds: Iterable[CompileCommand],
-) -> IOResultE[tuple[Path, ...]]:
-    with futures.ProcessPoolExecutor() as executor:
-        commands = futures.as_completed(
-            (executor.submit(_build_command_run, cmd) for cmd in cmds)
-        )
-        return Fold.collect(
-            tuple(map(lambda p: p.result(), commands)),
-            IOResultE.from_value(()),
-        ) or IOResultE.from_failure(
-            Exception("Something went wrong while processing commands asynchronously")
-        )
-
-
-def _build_command_run_all_concurrent_with_context(
-    cmds: Iterable[CompileCommand],
-) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
-    return (
-        RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]
-        .ask()
-        .bind(
-            lambda _: RequiresContextIOResultE.from_ioresult(
-                _build_command_run_all_concurrent(cmds)
-            )
-        )
-    )
-
-
 def _register_file_in_cache(
     cmds: Iterable[CompileCommand],
 ) -> RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]:
@@ -137,11 +107,7 @@ def _build_obj_files(
             compile_all_obj_files,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
             bind(_register_file_in_cache),
-            bind(
-                _build_command_run_all_concurrent_with_context
-                if len(src_files) > 10
-                else _build_command_run_all_with_context
-            ),
+            bind(_build_command_run_all_with_context),
         )
 
     return (
@@ -209,7 +175,7 @@ def _build_test_files(
             map_(strip_main),
             bind(compile_all_test_files),
             RequiresContextIOResultE.from_context,  # Needed because "compile_all_test_files()" returns a "RequiresContext"
-            bind(_build_command_run_all_concurrent_with_context),
+            bind(_build_command_run_all_with_context),
         )
 
     return RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(_inner)
