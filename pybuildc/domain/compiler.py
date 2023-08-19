@@ -95,7 +95,8 @@ def link_exe(
     """Links all obj files to a exe usin the cc"""
 
     def _inner_link_exe(context):
-        return compile(obj_files, _create_path(context.build, "bin", context.name))
+        bin_path =_create_path(context.build, "bin", context.name).with_suffix(".exe" if platform.system() == "Windows" else "")
+        return  compile(obj_files, bin_path)
 
     return RequiresContext[CompileCommand, _CompilerConfig].ask().bind(_inner_link_exe)
 
@@ -111,9 +112,10 @@ def link_shared(
         )
 
     def _inner_link_exe(context):
+        bin_path = _create_path(context.build, "bin", f"lib{context.name}.so" if platform.system() == "Linux" else f"{context.name}.dll")
         return compile(
             obj_files,
-            _create_path(context.build, "bin", f"lib{context.name}.so"),
+            bin_path,
             shared=True,
         )
 
