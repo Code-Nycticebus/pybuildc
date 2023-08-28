@@ -1,9 +1,9 @@
 from itertools import chain
 import json
 from pathlib import Path
+import pickle
 import subprocess
 from typing import Iterable, Protocol
-import pickle
 
 from returns.context import RequiresContextIOResultE
 from returns.io import IOResultE
@@ -30,13 +30,13 @@ class _BuilderConfig(Protocol):
     build: Path
     bin: str
 
-    cache: dict[Path, float]
+    cache: set[Path]
 
     verbose: bool
 
 
-def _needs_recompilation(cache: dict[Path, float], file: Path):
-    return cache.get(file, 0) < file.stat().st_mtime
+def _needs_recompilation(cache: set[Path], file: Path):
+    return file in cache
 
 
 def _build_command_run(
@@ -78,26 +78,6 @@ def _build_command_run_all_with_context(
     return RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig].ask().bind(inner)
 
 
-def _register_file_in_cache(
-    cmds: Iterable[CompileCommand],
-) -> RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]:
-    def _inner_register_file_in_cache(context: _BuilderConfig):
-        cache = {}
-        for cmd in cmds:
-            if cmd.input_files[0].suffix == ".c":
-                cache[cmd.input_files[0]] = cmd.input_files[0].stat().st_mtime
-            yield cmd
-
-        with (context.build / "cache").open("wb") as f:
-            pickle.dump(cache, f)
-
-    return (
-        RequiresContextIOResultE[Iterable[CompileCommand], _BuilderConfig]
-        .ask()
-        .map(_inner_register_file_in_cache)
-    )
-
-
 def _build_obj_files(
     src_files: tuple[Path, ...],
 ) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
@@ -106,7 +86,6 @@ def _build_obj_files(
             src_files,
             compile_all_obj_files,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
-            bind(_register_file_in_cache),
             bind(_build_command_run_all_with_context),
         )
 
@@ -114,6 +93,22 @@ def _build_obj_files(
         RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]
         .ask()
         .bind(_inner_build_obj_files)
+    )
+
+
+def _build_cache(
+    binary_file: Path,
+) -> RequiresContextIOResultE[Path, _BuilderConfig]:
+    def _inner_build_bin_file(context: _BuilderConfig):
+        cache_file = context.build / "cache"
+        cache_dict = {
+            file: file.stat().st_mtime for file in context.src.rglob("*.[c|h]")
+        }
+        cache_file.open("wb").write(pickle.dumps(cache_dict))
+        return RequiresContextIOResultE.from_value(binary_file)
+
+    return (
+        RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(_inner_build_bin_file)
     )
 
 
@@ -130,6 +125,7 @@ def _build_bin_file(
             else link_exe,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
             bind(_build_command_run_with_context),
+            bind(_build_cache),
         )
 
     return (
