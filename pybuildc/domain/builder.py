@@ -53,7 +53,9 @@ def _build_command_run(
 
 def _build_command_run_with_context(cmd: CompileCommand):
     def inner(config: _BuilderConfig):
-        if _needs_recompilation(config.cache, cmd.input_files[0]):
+        if cmd.output_path.suffix != ".o" or _needs_recompilation(
+            config.cache, cmd.input_files[0]
+        ):
             print(f"Building: {cmd.output_path.relative_to(config.build)}")
             if config.verbose:
                 print(" ".join(cmd.command))
