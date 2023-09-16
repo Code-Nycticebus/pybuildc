@@ -38,6 +38,9 @@ def pybuildc(args, argv) -> IOResultE[int]:
         case "test":
             os.chdir(args.directory)
             return commands.test(args, argv)
+        case "clean":
+            os.chdir(args.directory)
+            return commands.clean(args)
         case action:
             return IOFailure(
                 NotImplementedError(f"action '{action}' is not implemented")

@@ -47,6 +47,7 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
 
     subparser.add_parser("build", help="Builds the project")
     subparser.add_parser("run", help="Builds the project and runs the binary")
+    subparser.add_parser("clean", help="Cleans project and allows for clean rebuild")
 
     test_parser = subparser.add_parser(
         "test",
