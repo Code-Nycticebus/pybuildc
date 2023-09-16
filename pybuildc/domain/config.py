@@ -91,7 +91,7 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
 
                     os.chdir(sub_project_path)
                     BuildContext.create_from_config(
-                        sub_project_path, target, False
+                        sub_project_path, target == "release", False
                     ).map(build_compile_commands).bind(build_bin).unwrap()
                     os.chdir(project_dir)
 
