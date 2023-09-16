@@ -127,7 +127,6 @@ def _build_bin_file(
             else link_exe,
             RequiresContextIOResultE.from_context,  # Needed because the function above returns a "RequiresContext"
             bind(_build_command_run_with_context),
-            bind(_build_cache),
         )
 
     return (
@@ -142,6 +141,7 @@ def build_bin(
         tuple(context.src.rglob("*.c")),
         _build_obj_files,
         bind(_build_bin_file),
+        bind(_build_cache),
     )(context)
 
 

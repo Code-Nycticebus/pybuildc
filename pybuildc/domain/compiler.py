@@ -98,7 +98,6 @@ def link_exe(
         bin_path = _create_path(context.build, "bin", context.name).with_suffix(
             ".exe" if platform.system() == "Windows" else ""
         )
-        print("DOES EXECUTE", bin_path)
         return compile(obj_files, bin_path)
 
     return RequiresContext[CompileCommand, _CompilerConfig].ask().bind(_inner_link_exe)

@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Any, TypedDict
 import toml
 import platform
-import subprocess
 
 from returns.io import IOResultE, impure_safe
 from returns.maybe import maybe
@@ -84,15 +83,18 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
                     val.get("build", False)
                     or not (sub_project_path / ".build" / target).exists()
                 ):
-                    subprocess.run(
-                        [
-                            "pybuildc",
-                            f"--{target}",
-                            "-d",
-                            str(sub_project_path),
-                            "build",
-                        ]
-                    )
+                    # To prevent circular import
+                    from pybuildc.domain.builder import build_bin
+                    from pybuildc.domain.context import BuildContext
+                    from pybuildc.domain.builder import build_compile_commands
+                    import os
+
+                    os.chdir(sub_project_path)
+                    BuildContext.create_from_config(
+                        sub_project_path, target, False
+                    ).map(build_compile_commands).bind(build_bin).unwrap()
+                    os.chdir(project_dir)
+
                 load_config(sub_project_path / "pybuildc.toml").map(
                     lambda c: recursive_adding(sub_project_path, c, target)
                 ).unwrap()

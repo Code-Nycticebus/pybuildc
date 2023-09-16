@@ -4,8 +4,7 @@ import pickle
 
 from returns.io import IOResultE
 
-if not __name__ == "__main__":
-    from pybuildc.domain.config import load_config
+from pybuildc.domain.config import load_config
 
 
 def get_project_structure(directory: Path, target: str):
@@ -89,8 +88,3 @@ class BuildContext:
                 **get_project_structure(directory, target),
             )
         )
-
-
-if __name__ == "__main__":
-    print("TEST")
-    collect_cache(Path("../../examples/test/"), "debug")
