@@ -14,6 +14,6 @@ def clean(args) -> IOResultE[int]:
     with Path(args.directory, "pybuildc.toml").open("r") as f:
         config = toml.load(f)
         for dep in config.get("dependencies", dict()).values():
-            if dep.get("dep_type") == "pybuildc":
+            if dep.get("dep_type") == "pybuildc" and dep.get("build") == True:
                 remove_dir(Path(dep.get("dir"), ".build"))
     return IOResultE.from_value(0)
