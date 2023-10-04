@@ -63,7 +63,7 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
 
     for val in config.values():
         if "include" in val:
-            include_flags.extend(map(lambda i: f"-I{Path(project_dir, i).absolute().resolve()}", val["include"]))
+            include_flags.extend(map(lambda i: f"-I{i}", val["include"]))
 
         match val.get("dep_type", "static"):
             case "static":
