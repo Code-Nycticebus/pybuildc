@@ -26,22 +26,20 @@ def get_cache(directory: Path, target: str) -> dict[Path, float]:
     except FileNotFoundError:
         return dict()
 
-def build_dep_tree(files: Iterable[Path]) -> dict[Path, set]:
+def build_dep_tree(src: Path, files: Iterable[Path]) -> dict[Path, set]:
     deps = defaultdict(set)
+    search_text = "#include"
     for file in files:
-        text = file.read_text()
-        find_text = "#include"
-        index = text.find(find_text)
-        index = text.find("\"", index)
-        while 0 <= index:
-            include_start = text[index+1:]
-            end_index = include_start.find("\"")
-            include = include_start[:end_index]
-            deps[file].add(Path(file.parent, include)) 
-
-            text = include_start
-            index = text.find(find_text)
-            index = text.find("\"", index)
+        with file.open("r") as f:
+            for line in f.readlines():
+                index = line.find(search_text)
+                if index != -1:
+                    index = line.find("\"", index)
+                    if index != -1:
+                        include = line[index+1:-2]  
+                        dep_file = next(src.rglob(Path(include).name), None)
+                        if dep_file:
+                            deps[file].add(dep_file)
     return deps 
 
 def has_dep_that_changed(file: Path, deps: dict[Path, set], has_changed: set[Path]) -> bool:
@@ -63,16 +61,15 @@ def collect_cache(directory: Path, target: str) -> set[Path]:
         cache_dict = dict()
 
 
-    files = list((directory / "src").rglob("*.[h|c]"))
+    src_path = directory / "src"
+    files = list(src_path.rglob("*.[h|c]"))
     changed_files = {file for file in files if cache_dict.get(file, 0) < file.stat().st_mtime}
-    dep_tree = build_dep_tree(files)
+    dep_tree = build_dep_tree(src_path, files)
 
     need_recompilation = set()
     for file in filter(lambda file: file.name.endswith(".c"), files):
         if has_dep_that_changed(file, dep_tree, changed_files) or file in changed_files:
-            print(file)
             need_recompilation.add(file)
-
     return need_recompilation
 
 
