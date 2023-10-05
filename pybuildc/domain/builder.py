@@ -25,6 +25,7 @@ from pybuildc.domain.compiler import (
 
 class _BuilderConfig(Protocol):
     name: str
+    project: Path
     src: Path
     tests: Path
     build: Path
@@ -106,6 +107,8 @@ def _build_cache(
         cache_dict = {
             file: file.stat().st_mtime for file in context.src.rglob("*.[c|h]")
         }
+        config_file = context.project / "pybuildc.toml"
+        cache_dict[config_file] = config_file.stat().st_mtime
         cache_file.open("wb").write(pickle.dumps(cache_dict))
         return RequiresContextIOResultE.from_value(binary_file)
 

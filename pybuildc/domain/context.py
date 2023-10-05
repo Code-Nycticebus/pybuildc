@@ -63,6 +63,11 @@ def collect_cache(directory: Path, target: str) -> set[Path]:
 
     src_path = directory / "src"
     files = list(src_path.rglob("*.[h|c]"))
+
+    config_file = (directory / "pybuildc.toml")
+    if cache_dict.get(config_file, 0) < config_file.stat().st_mtime:
+        return set(files)
+    
     changed_files = {file for file in files if cache_dict.get(file, 0) < file.stat().st_mtime}
     dep_tree = build_dep_tree(src_path, files)
 
@@ -70,6 +75,7 @@ def collect_cache(directory: Path, target: str) -> set[Path]:
     for file in filter(lambda file: file.name.endswith(".c"), files):
         if has_dep_that_changed(file, dep_tree, changed_files) or file in changed_files:
             need_recompilation.add(file)
+
     return need_recompilation
 
 
