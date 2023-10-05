@@ -90,9 +90,16 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
                     import os
 
                     os.chdir(sub_project_path)
+
+                    def add_cflags(config: BuildContext):
+                        cflags: tuple[str, ...] = val.get("cflags")
+                        if cflags:
+                            config.cflags = (*config.cflags, *cflags) 
+                        return config
+
                     BuildContext.create_from_config(
                         sub_project_path, target == "release", False
-                    ).map(build_compile_commands).bind(build_bin).unwrap()
+                        ).map(add_cflags).map(build_compile_commands).bind(build_bin).unwrap()
                     os.chdir(project_dir)
 
                 load_config(sub_project_path / "pybuildc.toml").map(

@@ -73,7 +73,7 @@ def collect_cache(directory: Path, target: str) -> set[Path]:
     return need_recompilation
 
 
-@dataclass(frozen=True)
+@dataclass()
 class BuildContext:
     name: str
     version: str
