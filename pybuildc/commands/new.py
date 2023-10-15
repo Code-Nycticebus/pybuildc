@@ -66,6 +66,7 @@ int main(void) {{ printf("Test: " LIBNAME "\\n"); }}
         Path(args.directory, ".clangd"),
         """\
 CompileFlags:
+    Add: [-xc, -Wall, -Wextra, -pedantic]
     CompilationDatabase: .build/
 """,
     )
