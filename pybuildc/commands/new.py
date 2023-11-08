@@ -72,7 +72,9 @@ CompileFlags:
     )
 
     return (
-        BuildContext.create_from_config(args.directory, False, False)
+        BuildContext.create_from_config(
+            args.directory, False, False, action="compile_commands"
+        )
         .map(build_compile_commands)
         .map(lambda _: 0)
     )

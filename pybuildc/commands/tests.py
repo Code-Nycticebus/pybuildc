@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import subprocess
 from typing import Iterable
@@ -31,8 +32,9 @@ def run_all_tests(
 
 
 def test(args, argv) -> IOResultE[int]:
+    os.chdir(args.directory)
     return (
-        BuildContext.create_from_config(args.directory, False, args.verbose)
+        BuildContext.create_from_config(Path.cwd(), False, args.verbose, "build")
         .map(build_compile_commands)
         .bind(build_test_files)
         .bind(partial(run_all_tests, argv=argv))

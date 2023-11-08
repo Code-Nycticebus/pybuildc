@@ -30,6 +30,7 @@ class _BuilderConfig(Protocol):
     tests: Path
     build: Path
     bin: str
+    cc: str
 
     cache: set[Path]
 
@@ -212,3 +213,57 @@ def build_compile_commands(context):
         json.dump(compile_commands, f)
 
     return context
+
+
+def build_script(context) -> IOResultE[Path]:
+    script_path: Path = context.project / "build.sh"
+    with open(script_path, "w") as f:
+        f.write(f'PROJECT="{context.project.absolute().name}"\n')
+        f.write(f'CC="{context.cc}"\n')
+        f.write(f'BUILD_DIR="{context.build.relative_to(context.project)}"\n')
+        f.write(f'BIN_DIR="$BUILD_DIR/bin"\n')
+        f.write(f'BIN="$BIN_DIR/$PROJECT"\n')
+        f.write(f'OBJ_PATH="$BUILD_DIR/obj"\n')
+        f.write(f'OBJ="$OBJ_PATH/$PROJECT"\n')
+        f.write(f'SCRIPT_DIR=$(dirname "$0")\n')
+        f.write(f"\nset -xe\n\n")
+        f.write(f"cd $SCRIPT_DIR\n\n")
+
+        for script in context.build_scripts:
+            f.write(f"sh {script.relative_to(context.project)}\n")
+        if 0 < len(context.build_scripts):
+            f.write("\n")
+
+        f.write(f"mkdir -p $BIN_DIR\n")
+        f.write(f"mkdir -p $OBJ_PATH\n")
+        f.write("\n")
+
+        context.cc = "$CC"
+        context.build = context.build.relative_to(context.project)
+        if context.bin == "exe":
+            command = compile(
+                map(
+                    lambda file: file.relative_to(context.project),
+                    context.src.rglob("*.c"),
+                ),
+                "$BIN",
+            )(context)
+            f.write(" ".join(command.command))
+            f.write("\n")
+        elif context.bin == "static":
+            command = compile_all_obj_files(
+                map(
+                    lambda file: file,
+                    context.src.rglob("*.c"),
+                )
+            )(context)
+            for cmd in command:
+                f.write(" ".join(cmd.command))
+                f.write("\n")
+            command = link_static(tuple(map(lambda cmd: cmd.output_path, command)))(
+                context
+            )
+            f.write(" ".join(command.command))
+            f.write("\n")
+
+    return IOResultE.from_value(script_path)

@@ -47,6 +47,7 @@ class _CompilerConfig(Protocol):
     include_flags: Iterable[str]
     library_flags: Iterable[str]
 
+    project: Path
     build: Path
     src: Path
     tests: Path

@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from platform import platform
 from pybuildc.__version__ import __version__
 
 
@@ -13,8 +14,8 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
         "-d",
         "--directory",
         help="directory to build",
-        type=lambda value: Path(value).absolute(),
-        default=Path.cwd(),
+        type=Path,
+        default=Path("."),
     )
     parser.add_argument(
         "--release",
@@ -48,6 +49,13 @@ def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
     subparser.add_parser("build", help="Builds the project")
     subparser.add_parser("run", help="Builds the project and runs the binary")
     subparser.add_parser("clean", help="Cleans project and allows for clean rebuild")
+    script_parser = subparser.add_parser("script", help="Builds a build script")
+    script_parser.add_argument(
+        "--platform",
+        help="What platform you want to build the script for",
+        default=platform(),
+        choices=["windows", "linux"],
+    )
 
     test_parser = subparser.add_parser(
         "test",
