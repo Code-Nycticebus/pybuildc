@@ -202,7 +202,7 @@ def build_compile_commands(context):
         compile_commands.append(
             {
                 "file": str(file.relative_to(context.project)),
-                "directory": str(context.project),
+                "directory": str(context.project.absolute()),
                 "arguments": command.command,
             }
         )
