@@ -66,7 +66,8 @@ def _create_obj_file_path(file: Path) -> RequiresContext[Path, _CompilerConfig]:
         lambda config: _create_path(
             config.build,
             "obj",
-            file.relative_to(config.src).with_suffix(".o").name,
+            *file.parts[file.parts.index("src") : -1],
+            file.with_suffix(".o").name,
         )
     )
 
@@ -86,7 +87,7 @@ def compile(
                 ),
                 *(RELEASE_FLAGS if context.release else DEBUG_FLAGS),
                 *context.cflags,
-                *map(lambda f: str(f.relative_to(context.project)), obj_files),
+                *map(str, obj_files),
                 "-o",
                 str(output_path),
                 *(

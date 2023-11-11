@@ -265,11 +265,10 @@ def build_script(context):
                 context.library_flags,
             )
         )
-
         if context.bin == "exe":
             command = compile(
                 map(
-                    lambda file: file,
+                    lambda file: file.relative_to(context.project),
                     context.src.rglob("*.c"),
                 ),
                 "$BIN",
@@ -277,12 +276,14 @@ def build_script(context):
             f.write(" ".join(command.command))
             f.write("\n")
         elif context.bin == "static":
-            command = compile_all_obj_files(
+            files = tuple(
                 map(
-                    lambda file: file,
+                    lambda file: file.relative_to(context.project),
                     context.src.rglob("*.c"),
                 )
-            )(context)
+            )
+            print(files)
+            command = compile_all_obj_files(files)(context)
             for cmd in command:
                 f.write(" ".join(cmd.command))
                 f.write("\n")
