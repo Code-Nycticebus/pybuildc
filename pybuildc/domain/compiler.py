@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Protocol, Sequence
+from typing import Iterable, Protocol
 import platform
 
 from returns.context import RequiresContext

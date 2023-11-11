@@ -218,7 +218,7 @@ def build_compile_commands(context, *, build_dir=None):
 
 def build_script(context):
     script_path: Path = context.project / "build.sh"
-    build_dir = context.project / ".build"
+    build_dir = ".build"
 
     with open(script_path, "w") as f:
         f.write(f"#!/bin/bash\n")
