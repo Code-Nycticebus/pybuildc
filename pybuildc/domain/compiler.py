@@ -66,7 +66,7 @@ def _create_obj_file_path(file: Path) -> RequiresContext[Path, _CompilerConfig]:
         lambda config: _create_path(
             config.build,
             "obj",
-            *file.parts[file.parts.index("src") : -1],
+            *file.parts[file.parts.index(config.src.name) + 1 : -1],
             file.with_suffix(".o").name,
         )
     )
