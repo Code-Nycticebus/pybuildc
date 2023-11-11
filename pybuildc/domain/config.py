@@ -84,7 +84,21 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
                     else (f"-l{val['lib']}",)
                 )
                 if "build_script" in val:
-                    build_scripts.append(val["build_script"])
+                    build_script_path = Path(val["build_script"])
+                    build_scripts.append(build_script_path)
+                    if (
+                        "dir" in val
+                        and not Path(
+                            project_dir, val["dir"], f"lib{val['lib']}.a"
+                        ).exists()
+                    ):
+                        import os
+
+                        cwd = Path.cwd()
+                        os.chdir(build_script_path.parent)
+                        print("Wants to do this...")
+                        os.system(f"sh {build_script_path.name}")
+                        os.chdir(cwd)
 
             case "pybuildc":
                 sub_project_path = Path(project_dir, val["dir"])
