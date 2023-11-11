@@ -271,8 +271,9 @@ def build_script(context):
                     lambda file: file.relative_to(context.project),
                     context.src.rglob("*.c"),
                 ),
-                "$BIN",
+                Path("$BIN"),
             )(context)
+            f.write(f"mkdir -p {command.output_path.parent}\n")
             f.write(" ".join(command.command))
             f.write("\n")
         elif context.bin == "static":
@@ -283,6 +284,7 @@ def build_script(context):
                 )
             )(context)
             for cmd in command:
+                f.write(f"mkdir -p {cmd.output_path.parent}\n")
                 f.write(" ".join(cmd.command))
                 f.write("\n")
             command = link_static(tuple(map(lambda cmd: cmd.output_path, command)))(
