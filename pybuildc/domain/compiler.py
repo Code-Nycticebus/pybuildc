@@ -44,8 +44,8 @@ class _CompilerConfig(Protocol):
 
     cc: str
     cflags: Iterable[str]
-    include_flags: Iterable[str]
-    library_flags: Iterable[str]
+    include_flags: Iterable[Path]
+    library_flags: Iterable[tuple[Path, str]]
 
     project: Path
     build: Path
@@ -56,14 +56,17 @@ class _CompilerConfig(Protocol):
 def _create_path(*args):
     """Create path and mkdir's the parents to make sure the directory is valid."""
     p = Path(*args)
-    p.parent.mkdir(exist_ok=True, parents=True)
+    if not any("$" in str(path) for path in args):
+        p.parent.mkdir(exist_ok=True, parents=True)
     return p
 
 
 def _create_obj_file_path(file: Path) -> RequiresContext[Path, _CompilerConfig]:
     return RequiresContext(
         lambda config: _create_path(
-            config.build, "obj", file.relative_to(config.src).with_suffix(".o")
+            config.build,
+            "obj",
+            file.with_suffix(".o").name,
         )
     )
 
@@ -77,13 +80,34 @@ def compile(
             output_path=output_path,
             command=(
                 context.cc,
-                *context.include_flags,
+                *map(
+                    lambda f: f"-I{f}",
+                    context.include_flags,
+                ),
                 *(RELEASE_FLAGS if context.release else DEBUG_FLAGS),
                 *context.cflags,
                 *map(str, obj_files),
                 "-o",
                 str(output_path),
-                *(("-c",) if obj else context.library_flags),
+                *(
+                    ("-c",)
+                    if obj
+                    else (
+                        element
+                        for f in tuple(
+                            map(
+                                lambda f: (
+                                    f"-L{f[0]}",
+                                    f"-l{f[1]}",
+                                )
+                                if f[0]
+                                else (f"-l{f[1]}",),
+                                context.library_flags,
+                            )
+                        )
+                        for element in f
+                    )
+                ),
                 *(("--shared",) if shared else ()),
             ),
         )

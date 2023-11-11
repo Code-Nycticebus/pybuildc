@@ -96,8 +96,8 @@ class BuildContext:
 
     cc: str
     cflags: tuple[str, ...]
-    include_flags: tuple[str, ...]
-    library_flags: tuple[str, ...]
+    include_flags: tuple[Path, ...]
+    library_flags: tuple[tuple[Path, str], ...]
     build_scripts: tuple[Path, ...]
 
     project: Path
@@ -115,7 +115,7 @@ class BuildContext:
         return load_config(Path(directory, "pybuildc.toml")).map(
             lambda config: cls(
                 include_flags=config["deps"].get("include_flags", ())
-                + (f"-I{Path(directory, 'src')}",),
+                + (Path(directory, "src"),),
                 library_flags=config["deps"]["library_flags"],
                 build_scripts=config["deps"]["build_scripts"],
                 cache=collect_cache(directory, target),

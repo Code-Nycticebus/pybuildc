@@ -1,6 +1,5 @@
 import argparse
 from pathlib import Path
-from platform import platform
 from pybuildc.__version__ import __version__
 
 

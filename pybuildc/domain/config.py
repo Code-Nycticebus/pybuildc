@@ -10,8 +10,8 @@ from pybuildc.domain.builder import build_script
 
 
 class DependencyConfig(TypedDict):
-    include_flags: tuple[str, ...]
-    library_flags: tuple[str, ...]
+    include_flags: tuple[Path, ...]
+    library_flags: tuple[tuple[Path, str], ...]
     build_scripts: tuple[Path, ...]
 
 
@@ -55,11 +55,11 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
     build_scripts = []
 
     def recursive_adding(project_path: Path, c: Config, target: str):
-        include_flags.append(f"-I{(project_path/'include').relative_to(project_path)}")
-        include_flags.append(f"-I{(project_path/'src')}")
-        library_flags.append(f"-L{(project_path / '.build' / target / 'bin')}")
-        library_flags.append(f"-l{c['project']['name']}")
-
+        include_flags.append(project_path / "include")
+        include_flags.append(project_path / "src")
+        library_flags.append(
+            (project_path / ".build" / target / "bin", f"{c['project']['name']}")
+        )
         include_flags.extend(c["deps"]["include_flags"])
         library_flags.extend(c["deps"]["library_flags"])
         return c
@@ -68,23 +68,23 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
         if "include" in val:
             include_flags.extend(
                 map(
-                    lambda i: f"-I{Path(project_dir, i)}",
+                    lambda i: Path(project_dir, i),
                     val["include"],
                 )
             )
 
         match val.get("dep_type", "static"):
             case "static":
-                library_flags.extend(
+                library_flags.append(
                     (
-                        f"-L{Path(project_dir, val['dir'])}",
-                        f"-l{val['lib']}",
+                        Path(project_dir, val["dir"]),
+                        val["lib"],
                     )
                     if "dir" in val
-                    else (f"-l{val['lib']}",)
+                    else ("", val["lib"])
                 )
                 if "build_script" in val:
-                    build_script_path = Path(val["build_script"])
+                    build_script_path = project_dir / Path(val["build_script"])
                     build_scripts.append(build_script_path)
                     if (
                         "dir" in val
@@ -95,8 +95,8 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
                         import os
 
                         cwd = Path.cwd()
+                        print(project_dir / build_script_path.parent)
                         os.chdir(build_script_path.parent)
-                        print("Wants to do this...")
                         os.system(f"sh {build_script_path.name}")
                         os.chdir(cwd)
 
@@ -105,34 +105,37 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
                 target = val.get("target", "release")
                 build_scripts.append(sub_project_path / "build.sh")
 
-                if (
-                    val.get("build", False)
-                    or not (sub_project_path / ".build" / target).exists()
-                ):
-                    # To prevent circular import
-                    from pybuildc.domain.builder import build_bin
-                    from pybuildc.domain.context import BuildContext
-                    from pybuildc.domain.builder import build_compile_commands
+                def build(_):
+                    if (
+                        val.get("build", False)
+                        or not (sub_project_path / ".build" / target).exists()
+                    ):
+                        # To prevent circular import
+                        from pybuildc.domain.builder import build_bin
+                        from pybuildc.domain.context import BuildContext
+                        from pybuildc.domain.builder import build_compile_commands
 
-                    def add_cflags(config: BuildContext):
-                        cflags: tuple[str, ...] = val.get("cflags")
-                        if cflags:
-                            config.cflags = (*config.cflags, *cflags)
-                        return config
+                        def add_cflags(config: BuildContext):
+                            cflags: tuple[str, ...] = val.get("cflags")
+                            if cflags:
+                                config.cflags = (*config.cflags, *cflags)
+                            return config
 
-                    BuildContext.create_from_config(
-                        sub_project_path,
-                        target == "release",
-                        False,
-                    ).map(add_cflags).map(build_compile_commands).bind(
-                        build_script
-                    ).bind(
-                        build_bin
-                    ).unwrap()
+                        return (
+                            BuildContext.create_from_config(
+                                sub_project_path,
+                                target == "release",
+                                False,
+                            )
+                            .map(add_cflags)
+                            .map(build_compile_commands)
+                            .bind(build_script)
+                            .bind(build_bin)
+                        )
 
                 load_config(sub_project_path / "pybuildc.toml").map(
                     lambda c: recursive_adding(sub_project_path, c, target)
-                ).unwrap()
+                ).map(build).unwrap()
 
             case n:
                 raise ValueError(n)
