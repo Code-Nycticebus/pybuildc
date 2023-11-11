@@ -61,13 +61,6 @@ def _create_path(*args):
     return p
 
 
-def _search_parent_by_name(parents: Sequence[Path], name: str) -> int:
-    for i, path in enumerate(parents):
-        if name == path.name:
-            return i + 1
-    return 0
-
-
 def _create_obj_file_path(file: Path) -> RequiresContext[Path, _CompilerConfig]:
     return RequiresContext(
         lambda config: _create_path(
