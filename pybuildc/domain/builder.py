@@ -226,7 +226,7 @@ def build_script(context):
         f.write(f'PROJECT="{context.project.absolute().name}"\n')
         f.write(f'CC="{context.cc}"\n')
         f.write(f'BUILD_DIR="{context.build.relative_to(context.project)}"\n')
-        f.write("CFLAGS=()")
+        f.write("CFLAGS=()\n")
 
         f.write("\n#-------------Setup------------#\n")
         f.write(f'SCRIPT_DIR=$(dirname "$0")\n')
@@ -273,7 +273,6 @@ def build_script(context):
                 ),
                 Path("$BIN"),
             )(context)
-            f.write(f"mkdir -p {command.output_path.parent}\n")
             f.write(" ".join(command.command))
             f.write("\n")
         elif context.bin == "static":
