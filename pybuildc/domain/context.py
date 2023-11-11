@@ -109,16 +109,16 @@ class BuildContext:
 
     @classmethod
     def create_from_config(
-        cls, directory: Path, release: bool, verbose: bool, action: str
+        cls, directory: Path, release: bool, verbose: bool
     ) -> IOResultE:
         target = "release" if release else "debug"
-        return load_config(Path(directory, "pybuildc.toml"), action).map(
+        return load_config(Path(directory, "pybuildc.toml")).map(
             lambda config: cls(
                 include_flags=config["deps"].get("include_flags", ())
                 + (f"-I{Path(directory, 'src')}",),
                 library_flags=config["deps"]["library_flags"],
                 build_scripts=config["deps"]["build_scripts"],
-                cache=set() if action == "script" else collect_cache(directory, target),
+                cache=collect_cache(directory, target),
                 verbose=verbose,
                 release=release,
                 **config["project"],

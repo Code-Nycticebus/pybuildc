@@ -215,8 +215,9 @@ def build_compile_commands(context):
     return context
 
 
-def build_script(context) -> IOResultE[Path]:
+def build_script(context):
     script_path: Path = context.project / "build.sh"
+
     with open(script_path, "w") as f:
         f.write(f'PROJECT="{context.project.absolute().name}"\n')
         f.write(f'CC="{context.cc}"\n')
@@ -238,8 +239,12 @@ def build_script(context) -> IOResultE[Path]:
         f.write(f"mkdir -p $OBJ_PATH\n")
         f.write("\n")
 
+        # set context to be
+        cc = context.cc
         context.cc = "$CC"
+        build = context.build
         context.build = context.build.relative_to(context.project)
+
         if context.bin == "exe":
             command = compile(
                 map(
@@ -266,4 +271,8 @@ def build_script(context) -> IOResultE[Path]:
             f.write(" ".join(command.command))
             f.write("\n")
 
-    return IOResultE.from_value(script_path)
+        # Reset context
+        context.cc = cc
+        context.build = build
+
+    return IOResultE.from_value(context)

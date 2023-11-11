@@ -34,7 +34,7 @@ def run_all_tests(
 def test(args, argv) -> IOResultE[int]:
     os.chdir(args.directory)
     return (
-        BuildContext.create_from_config(Path.cwd(), False, args.verbose, "build")
+        BuildContext.create_from_config(Path.cwd(), False, args.verbose)
         .map(build_compile_commands)
         .bind(build_test_files)
         .bind(partial(run_all_tests, argv=argv))

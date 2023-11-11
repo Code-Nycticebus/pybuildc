@@ -49,7 +49,7 @@ def create_project_config(config: dict[str, Any]) -> ProjectConfig:
     )
 
 
-def handle_dependencies_config(project_dir: Path, config: dict[str, Any], action: str):
+def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
     include_flags = []
     library_flags = []
     build_scripts = []
@@ -106,26 +106,17 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any], action
                             config.cflags = (*config.cflags, *cflags)
                         return config
 
-                    if action != "script":
-                        BuildContext.create_from_config(
-                            sub_project_path,
-                            target == "release",
-                            False,
-                            action,
-                        ).map(add_cflags).map(build_compile_commands).bind(
-                            build_bin
-                        ).unwrap()
-
                     BuildContext.create_from_config(
                         sub_project_path,
                         target == "release",
                         False,
-                        action,
                     ).map(add_cflags).map(build_compile_commands).bind(
                         build_script
+                    ).bind(
+                        build_bin
                     ).unwrap()
 
-                load_config(sub_project_path / "pybuildc.toml", action).map(
+                load_config(sub_project_path / "pybuildc.toml").map(
                     lambda c: recursive_adding(sub_project_path, c, target)
                 ).unwrap()
 
@@ -136,13 +127,13 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any], action
 
 
 def create_dependecy_config(
-    project_dir: Path, config: dict[str, Any], action: str
+    project_dir: Path, config: dict[str, Any]
 ) -> DependencyConfig:
     config.update(config.pop(platform.system().lower(), dict()))
     config.pop("windows", None)
     config.pop("linux", None)
     include_flags, library_flags, build_scripts = handle_dependencies_config(
-        project_dir, config, action
+        project_dir, config
     )
     return DependencyConfig(
         # iterate over 'config' library names as keys, chain all the Iterables together and create a tuple.
@@ -152,16 +143,14 @@ def create_dependecy_config(
     )
 
 
-def parse_config(config: dict[str, Any], action: str) -> Config:
+def parse_config(config: dict[str, Any]) -> Config:
     return {
         "project": create_project_config(config["project"]),
         "deps": create_dependecy_config(
-            config["project_dir"], config.get("dependencies", dict()), action
+            config["project_dir"], config.get("dependencies", dict())
         ),
     }
 
 
-def load_config(config_path: Path, action: str) -> IOResultE[Config]:
-    return load_config_file(config_path).map(
-        lambda config: parse_config(config, action)
-    )
+def load_config(config_path: Path) -> IOResultE[Config]:
+    return load_config_file(config_path).map(lambda config: parse_config(config))

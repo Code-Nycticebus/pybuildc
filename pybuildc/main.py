@@ -36,8 +36,6 @@ def pybuildc(args, argv) -> IOResultE[int]:
             return commands.test(args, argv)
         case "clean":
             return commands.clean(args)
-        case "script":
-            return commands.script(args)
         case action:
             return IOFailure(
                 NotImplementedError(f"action '{action}' is not implemented")
