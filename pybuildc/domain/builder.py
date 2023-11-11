@@ -269,7 +269,7 @@ def build_script(context):
         if context.bin == "exe":
             command = compile(
                 map(
-                    lambda file: file.relative_to(context.project),
+                    lambda file: file,
                     context.src.rglob("*.c"),
                 ),
                 "$BIN",
@@ -279,7 +279,7 @@ def build_script(context):
         elif context.bin == "static":
             command = compile_all_obj_files(
                 map(
-                    lambda file: file.relative_to(context.project),
+                    lambda file: file,
                     context.src.rglob("*.c"),
                 )
             )(context)

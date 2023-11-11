@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Protocol
+from typing import Iterable, Protocol, Sequence
 import platform
 
 from returns.context import RequiresContext
@@ -61,12 +61,19 @@ def _create_path(*args):
     return p
 
 
+def _search_parent_by_name(parents: Sequence[Path], name: str) -> int:
+    for i, path in enumerate(parents):
+        if name == path.name:
+            return i + 1
+    return 0
+
+
 def _create_obj_file_path(file: Path) -> RequiresContext[Path, _CompilerConfig]:
     return RequiresContext(
         lambda config: _create_path(
             config.build,
             "obj",
-            file.with_suffix(".o").name,
+            file.relative_to(config.src).with_suffix(".o").name,
         )
     )
 
@@ -86,7 +93,7 @@ def compile(
                 ),
                 *(RELEASE_FLAGS if context.release else DEBUG_FLAGS),
                 *context.cflags,
-                *map(str, obj_files),
+                *map(lambda f: str(f.relative_to(context.project)), obj_files),
                 "-o",
                 str(output_path),
                 *(
