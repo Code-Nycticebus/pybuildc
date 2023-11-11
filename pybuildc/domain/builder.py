@@ -276,14 +276,12 @@ def build_script(context):
             f.write(" ".join(command.command))
             f.write("\n")
         elif context.bin == "static":
-            files = tuple(
+            command = compile_all_obj_files(
                 map(
                     lambda file: file.relative_to(context.project),
                     context.src.rglob("*.c"),
                 )
-            )
-            print(files)
-            command = compile_all_obj_files(files)(context)
+            )(context)
             for cmd in command:
                 f.write(" ".join(cmd.command))
                 f.write("\n")
