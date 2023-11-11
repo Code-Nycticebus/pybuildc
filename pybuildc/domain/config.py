@@ -58,7 +58,10 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
         include_flags.append(project_path / "include")
         include_flags.append(project_path / "src")
         library_flags.append(
-            (project_path / ".build" / target / "bin", f"{c['project']['name']}")
+            (
+                project_dir / ".build" / project_path / target / "bin",
+                f"{c['project']['name']}",
+            )
         )
         include_flags.extend(c["deps"]["include_flags"])
         library_flags.extend(c["deps"]["library_flags"])
@@ -104,15 +107,14 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
                 sub_project_path = Path(project_dir, val["dir"])
                 target = val.get("target", "release")
                 build_scripts.append(sub_project_path / "build.sh")
+                subproject_build_dir = project_dir / ".build" / sub_project_path.name
 
                 def build(_):
-                    if (
-                        val.get("build", False)
-                        or not (sub_project_path / ".build" / target).exists()
-                    ):
+                    if val.get("build", False) or not subproject_build_dir.exists():
                         # To prevent circular import
                         from pybuildc.domain.builder import build_bin
                         from pybuildc.domain.context import BuildContext
+
                         from pybuildc.domain.builder import build_compile_commands
 
                         def add_cflags(config: BuildContext):
@@ -121,14 +123,23 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
                                 config.cflags = (*config.cflags, *cflags)
                             return config
 
+                        def build_compile_commands_local(context):
+                            if val.get("build"):
+                                return build_compile_commands(
+                                    context, build_dir=context.project / ".build"
+                                )
+                            else:
+                                return build_compile_commands(context)
+
                         return (
                             BuildContext.create_from_config(
                                 sub_project_path,
+                                subproject_build_dir,
                                 target == "release",
                                 False,
                             )
                             .map(add_cflags)
-                            .map(build_compile_commands)
+                            .map(build_compile_commands_local)
                             .bind(build_script)
                             .bind(build_bin)
                         )

@@ -9,7 +9,9 @@ from pybuildc.domain.context import BuildContext
 def run(args, argv) -> IOResultE[int]:
     os.chdir(args.directory)
     return (
-        BuildContext.create_from_config(Path("."), args.release, args.verbose)
+        BuildContext.create_from_config(
+            Path("."), Path(".build"), args.release, args.verbose
+        )
         .bind(
             lambda context: IOSuccess(context)
             if context.bin == "exe"

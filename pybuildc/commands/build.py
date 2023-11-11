@@ -8,7 +8,9 @@ from pybuildc.domain.context import BuildContext
 def build(args) -> IOResultE[int]:
     os.chdir(args.directory)
     return (
-        BuildContext.create_from_config(Path("."), args.release, args.verbose)
+        BuildContext.create_from_config(
+            Path("."), Path(".build"), args.release, args.verbose
+        )
         .bind(build_script)
         .map(build_compile_commands)
         .bind(build_bin)

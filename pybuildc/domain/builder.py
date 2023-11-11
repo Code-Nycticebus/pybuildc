@@ -193,7 +193,10 @@ def build_test_files(context) -> IOResultE[tuple[Path, ...]]:
     )(context)
 
 
-def build_compile_commands(context):
+def build_compile_commands(context, *, build_dir=None):
+    if build_dir == None:
+        build_dir = context.build.parent
+        print(build_dir)
     compile_commands = list()
 
     for file in chain(context.src.rglob("*.c"), context.tests.rglob("*-test.c")):
@@ -207,9 +210,7 @@ def build_compile_commands(context):
             }
         )
 
-    with open(
-        _create_path(context.project, ".build", "compile_commands.json"), "w"
-    ) as f:
+    with open(_create_path(build_dir, "compile_commands.json"), "w") as f:
         json.dump(compile_commands, f)
 
     return context
@@ -217,6 +218,7 @@ def build_compile_commands(context):
 
 def build_script(context):
     script_path: Path = context.project / "build.sh"
+    build_dir = context.project / ".build"
 
     with open(script_path, "w") as f:
         f.write(f"#!/bin/bash\n")
@@ -225,7 +227,7 @@ def build_script(context):
 
         f.write(f'PROJECT="{context.project.absolute().name}"\n')
         f.write(f'CC="{context.cc}"\n')
-        f.write(f'BUILD_DIR="{context.build.relative_to(context.project)}"\n')
+        f.write(f'BUILD_DIR="{build_dir}"\n')
         f.write("CFLAGS=()\n")
 
         f.write("\n#-------------Setup------------#\n")

@@ -9,11 +9,10 @@ from returns.io import IOResultE
 from pybuildc.domain.config import load_config
 
 
-def get_project_structure(directory: Path, target: str):
+def get_project_structure(directory: Path):
     return {
         "project": directory,
         "src": Path(directory, "src"),
-        "build": Path(directory, ".build", target),
         "tests": Path(directory, "tests"),
     }
 
@@ -109,7 +108,7 @@ class BuildContext:
 
     @classmethod
     def create_from_config(
-        cls, directory: Path, release: bool, verbose: bool
+        cls, directory: Path, build_directory: Path, release: bool, verbose: bool
     ) -> IOResultE:
         target = "release" if release else "debug"
         return load_config(Path(directory, "pybuildc.toml")).map(
@@ -121,7 +120,8 @@ class BuildContext:
                 cache=collect_cache(directory, target),
                 verbose=verbose,
                 release=release,
+                build=build_directory / target,
                 **config["project"],
-                **get_project_structure(directory, target),
+                **get_project_structure(directory),
             )
         )
