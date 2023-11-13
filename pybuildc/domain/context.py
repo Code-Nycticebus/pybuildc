@@ -54,8 +54,8 @@ def has_dep_that_changed(
     return False
 
 
-def collect_cache(directory: Path, target: str) -> set[Path]:
-    cache_file = directory / ".build" / target / "cache"
+def collect_cache(directory: Path, build_dir: Path, target: str) -> set[Path]:
+    cache_file = build_dir / target / "cache"
     cache_dict: dict[Path, float]
     try:
         with cache_file.open("rb") as f:
@@ -117,7 +117,7 @@ class BuildContext:
                 + (Path(directory, "src"),),
                 library_flags=config["deps"]["library_flags"],
                 build_scripts=config["deps"]["build_scripts"],
-                cache=collect_cache(directory, target),
+                cache=collect_cache(directory, build_directory, target),
                 verbose=verbose,
                 release=release,
                 build=build_directory / target,
