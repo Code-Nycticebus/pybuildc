@@ -6,8 +6,6 @@ import platform
 from returns.io import IOResultE, impure_safe
 from returns.maybe import maybe
 
-from pybuildc.domain.builder import build_script
-
 
 class DependencyConfig(TypedDict):
     include_flags: tuple[Path, ...]
@@ -54,12 +52,14 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
     library_flags = []
     build_scripts = []
 
-    def recursive_adding(project_path: Path, c: Config, target: str):
+    def recursive_adding(
+        project_path: Path, sub_project_build: Path, c: Config, target: str
+    ):
         include_flags.append(project_path / "include")
         include_flags.append(project_path / "src")
         library_flags.append(
             (
-                project_dir / ".build" / project_path / target / "bin",
+                sub_project_build / target / "bin",
                 f"{c['project']['name']}",
             )
         )
@@ -114,7 +114,7 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
                         # To prevent circular import
                         from pybuildc.domain.builder import build_bin
                         from pybuildc.domain.context import BuildContext
-
+                        from pybuildc.domain.scripts import build_script
                         from pybuildc.domain.builder import build_compile_commands
 
                         def add_cflags(config: BuildContext):
@@ -145,7 +145,9 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
                         )
 
                 load_config(sub_project_path / "pybuildc.toml").map(
-                    lambda c: recursive_adding(sub_project_path, c, target)
+                    lambda c: recursive_adding(
+                        project_dir, subproject_build_dir, c, target
+                    )
                 ).map(build).unwrap()
 
             case n:

@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 import subprocess
 from returns.io import IOFailure, IOResultE, IOSuccess
-from pybuildc.domain.builder import build_bin, build_compile_commands, build_script
+from pybuildc.domain.builder import build_bin, build_compile_commands
+from pybuildc.domain.scripts import build_script
 from pybuildc.domain.context import BuildContext
 
 

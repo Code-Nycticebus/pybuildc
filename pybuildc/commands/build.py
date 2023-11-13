@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
 from returns.io import IOResultE
-from pybuildc.domain.builder import build_bin, build_compile_commands, build_script
+from pybuildc.domain.builder import build_bin, build_compile_commands
+from pybuildc.domain.scripts import build_script
 from pybuildc.domain.context import BuildContext
 
 
