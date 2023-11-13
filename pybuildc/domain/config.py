@@ -146,7 +146,7 @@ def handle_dependencies_config(project_dir: Path, config: dict[str, Any]):
 
                 load_config(sub_project_path / "pybuildc.toml").map(
                     lambda c: recursive_adding(
-                        project_dir, subproject_build_dir, c, target
+                        sub_project_path, subproject_build_dir, c, target
                     )
                 ).map(build).unwrap()
 
