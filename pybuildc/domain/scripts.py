@@ -60,20 +60,20 @@ def linux_script(context):
         )
         if context.bin == "exe":
             command = compile(
-                map(
+                sorted(map(
                     lambda file: file.relative_to(context.project),
                     context.src.rglob("*.c"),
-                ),
+                )),
                 Path("$BIN"),
             )(context)
             f.write(" ".join(command.command))
             f.write("\n")
         elif context.bin == "static":
             command = compile_all_obj_files(
-                map(
+                sorted(map(
                     lambda file: file.relative_to(context.project),
                     context.src.rglob("*.c"),
-                )
+                ))
             )(context)
             for cmd in command:
                 f.write(f"mkdir -p {cmd.output_path.parent}\n")
