@@ -66,13 +66,13 @@ int main(void) {{ printf("Test: " LIBNAME "\\n"); }}
         Path(args.directory, ".clangd"),
         """\
 CompileFlags:
-    Add: [-xc, -Wall, -Wextra, -pedantic]
+    Add: [-xc, -Wall, -Wextra, -pedantic, -Werror]
     CompilationDatabase: .build/
 """,
     )
 
     return (
-        BuildContext.create_from_config(args.directory, Path(".build"), False, False)
-        .map(build_compile_commands)
+    BuildContext.create_from_config(args.directory, Path(args.directory, ".build"), False, False)
+    .map(build_compile_commands)
         .map(lambda _: 0)
     )
