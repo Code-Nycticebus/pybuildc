@@ -92,10 +92,14 @@ def linux_script(context):
         context.include_flags = include_flags
         context.library_flags = library_flags
 
+def windows_script(_): pass
 
 def build_script(context):
     p = platform.system()
     if "Linux" == p:
         linux_script(context)
+        return IOResultE.from_value(context)
+    if "Windows" == p:
+        windows_script(context)
         return IOResultE.from_value(context)
     return IOResultE.from_failure(Exception(f"Platform not supported: {p}"))
