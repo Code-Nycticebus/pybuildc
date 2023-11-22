@@ -56,7 +56,7 @@ class _CompilerConfig(Protocol):
 def _create_path(*args):
     """Create path and mkdir's the parents to make sure the directory is valid."""
     p = Path(*args)
-    if not any("$" in str(path) for path in args):
+    if not any("$" in str(path) or "%" in str(path) for path in args):
         p.parent.mkdir(exist_ok=True, parents=True)
     return p
 
