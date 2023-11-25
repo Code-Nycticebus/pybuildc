@@ -60,20 +60,24 @@ def linux_script(context):
         )
         if context.bin == "exe":
             command = compile(
-                sorted(map(
-                    lambda file: file.relative_to(context.project),
-                    context.src.rglob("*.c"),
-                )),
+                sorted(
+                    map(
+                        lambda file: file.relative_to(context.project),
+                        context.src.rglob("*.c"),
+                    )
+                ),
                 Path("$BIN"),
             )(context)
             f.write(" ".join(command.command))
             f.write("\n")
         elif context.bin == "static":
             command = compile_all_obj_files(
-                sorted(map(
-                    lambda file: file.relative_to(context.project),
-                    context.src.rglob("*.c"),
-                ))
+                sorted(
+                    map(
+                        lambda file: file.relative_to(context.project),
+                        context.src.rglob("*.c"),
+                    )
+                )
             )(context)
             for cmd in command:
                 f.write(f"mkdir -p {cmd.output_path.parent}\n")
@@ -92,7 +96,8 @@ def linux_script(context):
         context.include_flags = include_flags
         context.library_flags = library_flags
 
-def windows_script(context): 
+
+def windows_script(context):
     script_path: Path = context.project / "build.bat"
     build_dir = ".build"
 
@@ -103,7 +108,7 @@ def windows_script(context):
 
         f.write(f'set PROJECT="{context.project.absolute().name}"\n')
         f.write(f'set CC="{context.cc}"\n')
-        f.write(f'set BUILD_DIR="{build_dir}\"\n')
+        f.write(f'set BUILD_DIR="{build_dir}"\n')
         f.write("set CFLAGS=\n")
 
         f.write("\n::-------------Setup------------::\n")
@@ -116,7 +121,9 @@ def windows_script(context):
         if len(context.build_scripts):
             f.write("\n::---------Dependencies---------::\n")
             for script in context.build_scripts:
-                f.write(f"call {script.relative_to(context.project).with_suffix(".bat")}\n")
+                f.write(
+                    f"call {script.relative_to(context.project).with_suffix('.bat')}\n"
+                )
                 f.write(f"cd /D %~dp0\n")
         f.write("\n::---------Compilation---------::\n")
 
@@ -142,19 +149,23 @@ def windows_script(context):
         )
         if context.bin == "exe":
             command = link_exe(
-                sorted(map(
-                    lambda file: file.relative_to(context.project),
-                    context.src.rglob("*.c"),
-                )),
+                sorted(
+                    map(
+                        lambda file: file.relative_to(context.project),
+                        context.src.rglob("*.c"),
+                    )
+                ),
             )(context)
             f.write(" ".join(command.command))
             f.write("\n")
         elif context.bin == "static":
             command = compile_all_obj_files(
-                sorted(map(
-                    lambda file: file.relative_to(context.project),
-                    context.src.rglob("*.c"),
-                ))
+                sorted(
+                    map(
+                        lambda file: file.relative_to(context.project),
+                        context.src.rglob("*.c"),
+                    )
+                )
             )(context)
             for cmd in command:
                 f.write(f"mkdir {cmd.output_path.parent} 2>NUL\n")
@@ -172,6 +183,7 @@ def windows_script(context):
         context.cflags = cflags
         context.include_flags = include_flags
         context.library_flags = library_flags
+
 
 def build_script(context):
     p = platform.system()
