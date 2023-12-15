@@ -178,6 +178,7 @@ def _build_test_files(
             bind(compile_all_test_files),
             RequiresContextIOResultE.from_context,  # Needed because "compile_all_test_files()" returns a "RequiresContext"
             bind(_build_command_run_all_with_context),
+            bind(_build_cache),
         )
 
     return RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(_inner)
