@@ -6,10 +6,10 @@ import subprocess
 from typing import Iterable, Protocol
 
 from returns.context import RequiresContextIOResultE
-from returns.io import IOResultE
+from returns.io import IOFailure, IOResultE
 from returns.iterables import Fold
 from returns.pipeline import flow
-from returns.pointfree import bind, map_
+from returns.pointfree import bind
 
 from pybuildc.domain.compiler import (
     CompileCommand,
@@ -156,7 +156,7 @@ def _build_test_files(
     obj_files: CompileCommand,
 ) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
     def _inner(context: _BuilderConfig):
-        def strip_main(lib_name):
+        def strip_main(lib_name) -> IOResultE[Path]:
             new_name = _create_path(
                 context.build,
                 "tests",
@@ -172,18 +172,21 @@ def _build_test_files(
                     str(new_name),
                 ]
             )
-            return new_name
+            return IOResultE.from_value(new_name)
 
         return flow(
             obj_files,
             _build_command_run,
-            map_(strip_main),
+            bind(strip_main),
             bind(compile_all_test_files),
             RequiresContextIOResultE.from_context,  # Needed because "compile_all_test_files()" returns a "RequiresContext"
             bind(_build_command_run_all_with_context),
             bind(_build_cache),
         )
 
+    match obj_files:
+        case IOFailure(_):
+            return RequiresContextIOResultE.from_ioresult(obj_files)
     return RequiresContextIOResultE[Path, _BuilderConfig].ask().bind(_inner)
 
 
@@ -192,6 +195,7 @@ def build_test_files(context) -> IOResultE[tuple[Path, ...]]:
         tuple(context.src.rglob("*.c")),
         _build_obj_files,
         bind(link_static),
+        RequiresContextIOResultE.from_context,  # Needed because "link_static()" returns a "RequiresContext"
         bind(_build_test_files),
     )(context)
 
