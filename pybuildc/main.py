@@ -16,7 +16,7 @@ def error(e: Exception) -> int:
             print(f"File not found: {e.filename}")
             return 1
         case CalledProcessError():
-            print("Command exited with non zero exit code:", " ".join(e.cmd))
+            print(f'Command exit code {e.returncode}: "{" ".join(e.cmd)}"')
             return e.returncode
         case Exception():
             raise e

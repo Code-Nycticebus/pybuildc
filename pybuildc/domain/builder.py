@@ -45,8 +45,11 @@ def _build_command_run(
     cmd: CompileCommand,
 ) -> IOResultE[Path]:
     try:
-        if subprocess.run(cmd.command).returncode != 0:
-            return IOResultE.from_failure(Exception(cmd.command))
+        p = subprocess.run(cmd.command)
+        if p.returncode != 0:
+            return IOResultE.from_failure(
+                subprocess.CalledProcessError(p.returncode, cmd.command)
+            )
     except FileNotFoundError as e:
         e.add_note(f"Command '{cmd.command[0]}' not found!")
         raise
