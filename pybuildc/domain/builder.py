@@ -189,7 +189,6 @@ def build_test_files(context) -> IOResultE[tuple[Path, ...]]:
         tuple(context.src.rglob("*.c")),
         _build_obj_files,
         bind(link_static),
-        RequiresContextIOResultE.from_context,  # Needed because "compile_all_test_files()" returns a "RequiresContext"
         bind(_build_test_files),
     )(context)
 
