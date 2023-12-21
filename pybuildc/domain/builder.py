@@ -4,6 +4,7 @@ from pathlib import Path
 import pickle
 import subprocess
 from typing import Iterable, Protocol
+import platform
 
 from returns.context import RequiresContextIOResultE
 from returns.io import IOFailure, IOResultE
@@ -157,23 +158,25 @@ def _build_test_files(
 ) -> RequiresContextIOResultE[tuple[Path, ...], _BuilderConfig]:
     def _inner(context: _BuilderConfig):
         def strip_main(lib_name) -> IOResultE[Path]:
-            new_name = _create_path(
-                context.build,
-                "tests",
-                f"{lib_name.with_suffix('').name}-test.a",
-            )
-
-            subprocess.run(
-                [
-                    "objcopy",
-                    "--redefine-sym",
-                    f"main={context.name}_main",
-                    str(lib_name),
-                    str(new_name),
-                ]
-            )
-            return IOResultE.from_value(new_name)
-
+            if platform.system() == "Linux":
+                new_name = _create_path(
+                    context.build,
+                    "tests",
+                    f"{lib_name.with_suffix('').name}-test.a" if platform.system() == "Linux" else f"{lib_name.with_suffix('').name}-test.lib",
+                )
+                subprocess.run(
+                    [
+                        "objcopy",
+                        "--redefine-sym",
+                        f"main={context.name}_main",
+                        str(lib_name),
+                        str(new_name),
+                    ]
+                )
+                return IOResultE.from_value(new_name)
+            if context.bin == "exe":
+                raise Exception(f"Exe files not testable on this platform: {platform.system()}")
+            return IOResultE.from_value(lib_name)
         return flow(
             obj_files,
             _build_command_run,
