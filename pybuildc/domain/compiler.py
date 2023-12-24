@@ -220,7 +220,7 @@ def compile_all_test_files(
                     (test_file, obj_files),
                     _create_path(
                         context.build, "tests", test_file.relative_to(context.tests)
-                    ).with_suffix(""),
+                    ).with_suffix(".exe" if platform.system() == "Windows" else ""),
                 )(context),
                 sorted(
                     context.tests.rglob("*-test.c"),
