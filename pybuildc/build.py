@@ -138,8 +138,6 @@ def build(config: ConfigFile, cflags: list[str]):
     )
     subprocess.run(cmd.args)
 
-    build_tests(config)
-
     return output
 
 
@@ -167,7 +165,11 @@ def build_commands(config: ConfigFile):
     )
 
 
-def build_tests(config: ConfigFile):
+def test(config: ConfigFile):
+    config.bin = "static"
+
+    build(config, [])
+
     config.dependencies = (
         *config.dependencies,
         Dependency(
@@ -184,7 +186,8 @@ def build_tests(config: ConfigFile):
         config,
         [],
     )
-    tests = (
+
+    tests = tuple(
         (
             _validate_path(
                 config.build_dir
@@ -198,30 +201,17 @@ def build_tests(config: ConfigFile):
     test_files = tuple((out, file) for out, file in tests if file in config.cache.cache)
     if len(test_files):
         print(f"[pybuildc]: building tests: '{config.name}'")
-        for n, (out, file) in enumerate(test_files):
-            cmd = cc.compile_exe(
-                (file,),
-                out,
-            )
-            print(f"  [{(n+1)/len(test_files): 5.0%}]: compiling '{file}'")
-            subprocess.run(cmd.args, check=True)
-
-
-def test(config: ConfigFile):
-    config.bin = "static"
-    build(config, [])
-
-    tests = tuple(
-        config.build_dir
-        / "test"
-        / file.with_suffix("").relative_to(config.dir / "test")
-        for file in sorted(
-            (config.dir / "test").rglob("**/*-test.c"), key=lambda f: f.stat().st_mtime
+    for n, (out, file) in enumerate(test_files):
+        cmd = cc.compile_exe(
+            (file,),
+            out,
         )
-    )
+        print(f"  [{(n+1)/len(test_files): 5.0%}]: compiling '{file}'")
+        subprocess.run(cmd.args, check=True)
+
     cwd = Path.cwd()
     os.chdir(config.dir)
-    for test in tests:
+    for test, _ in tests:
         if subprocess.run([test.relative_to(config.dir)]).returncode != 0:
             raise Exception(f"Test failed: {test.name}")
     os.chdir(cwd)
