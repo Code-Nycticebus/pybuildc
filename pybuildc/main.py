@@ -1,8 +1,9 @@
 import sys
-from pybuildc.build import build
 from pybuildc.new import new
 
 from pybuildc.args import ArgsConfig, args_parse
+from pybuildc.config import config_load
+from pybuildc.builder import build
 
 
 def pybuildc(args: ArgsConfig, argv: list[str]):
@@ -10,7 +11,8 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
         case "new":
             new(args)
         case "build":
-            build(args, argv)
+            build(config_load(args.directory), argv)
+
         case action:
             raise Exception(f"{action} is not implemented yet")
 
