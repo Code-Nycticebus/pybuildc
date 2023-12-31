@@ -218,6 +218,7 @@ class ConfigFile:
         directory: Path,
         build_dir: str | Path | None,
         mode: Literal["debug"] | Literal["release"],
+        bin: Literal["exe"] | Literal["static"] | None = None,
     ) -> ConfigFile:
         bd = Path(build_dir) if build_dir else directory / ".build" / mode
         file = tomllib.loads((directory / "pybuildc.toml").read_text())
@@ -238,6 +239,7 @@ class ConfigFile:
             dependencies=deps,
             include_dirs=include_dirs,
             cflags=file["pybuildc"].pop("cflags", ()),
+            bin=bin if bin else file["pybuildc"].pop("bin", "static"),
             **file["pybuildc"],
         )
 

@@ -19,10 +19,9 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
         case "run":
             config = ConfigFile.load(args.dir, args.build_dir, args.mode)
             config.exe = args.exe
-            if config.bin == "exe":
-                subprocess.run([build(config, []), *argv])
-            else:
-                raise Exception("project not runnable")
+            config.bin = "exe"
+            subprocess.run([build(config, []), *argv])
+
             config.save_cache()
         case "test":
             config = ConfigFile.load(args.dir, args.build_dir, args.mode)
