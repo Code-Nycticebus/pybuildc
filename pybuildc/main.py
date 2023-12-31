@@ -26,6 +26,7 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
     build_commands(
         ConfigFile.load(args.dir.relative_to(args.dir), args.build_dir, args.mode)
     )
+    print(f"[pybuildc] build successful: '{args.dir.name}'")
 
 
 def main():

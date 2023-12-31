@@ -90,7 +90,7 @@ def build(config: ConfigFile, cflags: list[str]):
     for n, (obj, src) in enumerate(zip(obj_files, src_files)):
         cmd = cc.compile_obj(src, _validate_path(obj))
         if src in config.cache.cache:
-            print(f"[ {config.name} ][{(n+1)/len(obj_files): 5.0%}]: compiling {src}")
+            print(f"[{config.name}][{(n+1)/len(obj_files): 5.0%}]: compiling {src}")
             subprocess.run(cmd.args, check=True)
 
     cmd = (
