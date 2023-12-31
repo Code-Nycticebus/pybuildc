@@ -1,5 +1,5 @@
 # Pybuildc
-Personal build system for the C language. This project serves as a way to learn the [returns](https://github.com/dry-python/returns) library. It kinda makes my job harder sometimes and the code is more complex and harder to read.  
+Personal build system for the C language.  
 
 ### Contents
 1. [Install](#install)
