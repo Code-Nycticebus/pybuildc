@@ -8,11 +8,10 @@ setup(
     author="Loris Kriyonas",
     author_email="loris.kriyonas@gmail.com",
     keywords=["c"],
-    python_requires=">=3.10",
+    python_requires=">=3.11",
     packages=find_packages(),
     install_requires=[
-        "toml",
-        'importlib-metadata; python_version<"3.10"',
+        'importlib-metadata; python_version<"3.11"',
     ],
     entry_points={
         "console_scripts": [
