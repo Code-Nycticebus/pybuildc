@@ -1,58 +1,37 @@
-import argparse
 from pathlib import Path
-from pybuildc.__version__ import __version__
+from typing import Literal, Protocol
+import argparse
 
 
-def parse_args(args: list[str]) -> tuple[argparse.Namespace, list[str]]:
+class ArgsConfig(Protocol):
+    action: str
+    dir: Path
+    mode: Literal["debug"] | Literal["release"]
+    build_dir: str
+    bin: Path | None
+    exe: str | None
+
+
+def args_parse(argv: list[str]) -> tuple[ArgsConfig, list[str]]:
     parser = argparse.ArgumentParser(
-        description="A build system for the c language",
+        prog="pybuildc",
+        description="Builds C projects",
+        epilog="",
     )
-    parser.add_argument("--version", action="version", version=__version__)
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-    parser.add_argument(
-        "-d",
-        "--directory",
-        help="directory to build",
-        type=Path,
-        default=Path("."),
-    )
-    parser.add_argument(
-        "--release",
-        help="Enables optimizations and removes debug flags",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--debug",
-        help="Enables optimizations and removes debug flags",
-        action="store_false",
-    )
-    subparser = parser.add_subparsers(
-        dest="action",
-        required=True,
-        description="Build action",
-    )
+    parser.add_argument("-d", "--dir", type=Path, default=Path.cwd())
+    parser.add_argument("-bd", "--build-dir")
+    parser.add_argument("-m", "--mode", choices=("debug", "release"), default="debug")
 
-    new_parser = subparser.add_parser("new", help="Creates a new project")
-    new_parser.add_argument(
-        "directory",
-        help="Name of the new project directory",
-        type=Path,
-    )
-    new_parser.add_argument(
-        "--lib",
-        action="store_true",
-        help="creates a library template instead of a executable template.",
-        default=False,
-    )
+    subparser = parser.add_subparsers(dest="action", required=True)
 
-    subparser.add_parser("build", help="Builds the project")
-    subparser.add_parser("run", help="Builds the project and runs the binary")
-    subparser.add_parser("clean", help="Cleans project and allows for clean rebuild")
+    new = subparser.add_parser("new")
+    new.add_argument("dir", type=Path)
+    new.add_argument("--bin", choices=("static", "exe"), default="exe")
 
-    test_parser = subparser.add_parser(
-        "test",
-        help="Builds and runs tests in 'tests' folder. '*-test.c' is treated as the 'main' file.",
-    )
-    test_parser.add_argument("--file", help="Runs only one specific '*-test.c' file.")
+    subparser.add_parser("build")
+    run = subparser.add_parser("run")
+    run.add_argument("-e", "--exe", default=None)
 
-    return parser.parse_known_args(args)
+    subparser.add_parser("test")
+
+    return parser.parse_known_args(argv)  # type: ignore

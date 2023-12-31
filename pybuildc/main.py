@@ -1,56 +1,50 @@
-from subprocess import CalledProcessError
+import subprocess
 import sys
+import os
 
-from returns.io import IOResultE, IOFailure, IOSuccess
-from returns.result import Failure, Success
-
-from pybuildc.args import parse_args
-
-import pybuildc.commands as commands
-
-
-# TODO error handling
-def error(e: Exception) -> int:
-    match e:
-        case FileNotFoundError():
-            print(f"File not found: {e.filename}")
-            return 1
-        case CalledProcessError():
-            print(f'Command exit code {e.returncode}: "{" ".join(e.cmd)}"')
-            return e.returncode
-        case Exception():
-            raise e
-        case _:
-            print("Unkown returntype", e)
+from pybuildc.new import new
+from pybuildc.args import ArgsConfig, args_parse
+from pybuildc.config import ConfigFile
+from pybuildc.build import build, build_commands, test
 
 
-def pybuildc(args, argv) -> IOResultE[int]:
+def pybuildc(args: ArgsConfig, argv: list[str]):
     match args.action:
         case "new":
-            return commands.new(args)
+            new(args)
         case "build":
-            return commands.build(args)
+            config = ConfigFile.load(args.dir, args.build_dir, args.mode)
+            build(config, argv)
+            config.save_cache()
         case "run":
-            return commands.run(args, argv)
+            config = ConfigFile.load(args.dir, args.build_dir, args.mode)
+            config.exe = args.exe
+            if config.bin == "exe":
+                subprocess.run([build(config, []), *argv])
+            else:
+                raise Exception("project not runnable")
+            config.save_cache()
         case "test":
-            return commands.test(args, argv)
-        case "clean":
-            return commands.clean(args)
+            config = ConfigFile.load(args.dir, args.build_dir, args.mode)
+            test(config)
+            config.save_cache()
         case action:
-            return IOFailure(
-                NotImplementedError(f"action '{action}' is not implemented")
-            )
+            raise Exception(f"{action} is not implemented yet")
+
+    os.chdir(args.dir)
+    build_commands(
+        ConfigFile.load(
+            directory=args.dir.relative_to(args.dir),
+            build_dir=args.build_dir,
+            mode=args.mode,
+        )
+    )
 
 
-def main() -> int:
-    args, argv = parse_args(sys.argv[1:])
-
-    match pybuildc(args, argv):
-        case IOSuccess(Success(returncode)):
-            return returncode
-        case IOFailure(Failure(e)):
-            return error(e)
-        case unknown:
-            raise TypeError(
-                f"pybuildc should return a 'IOResultE' instead got {type(unknown)}"
-            )
+def main():
+    args, argv = args_parse(sys.argv[1:])
+    try:
+        pybuildc(args, argv)
+    except subprocess.CalledProcessError as e:
+        failed_cmd = e.args[1]
+        print(f"[pybuildc] Error: '{' '.join(failed_cmd)}'")
