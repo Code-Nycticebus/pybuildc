@@ -24,9 +24,10 @@ bin = "exe"
 """
     )
 
-    src_file = _create_path(directory / "src" / "main.c")
-    src_file.write_text(
-        """\
+    if config.bin:
+        src_file = _create_path(directory / "src" / "bin" / f"{directory.name}.c")
+        src_file.write_text(
+            """\
 #include<stdio.h>
 
 int main(void) {
@@ -34,7 +35,31 @@ int main(void) {
 }
 
 """
-    )
+        )
+    else:
+        src_file = _create_path(directory / "src" / f"{directory.name}.c")
+        src_file.write_text(
+            """\
+#include"{TEXT}.h"
+#include<stdio.h>
+
+int foo(void) {
+    printf("Hello, World\\n");
+}
+
+""".replace(
+                "{TEXT}", directory.name
+            )
+        )
+        inc_file = _create_path(directory / "src" / f"{directory.name}.h")
+        inc_file.write_text(
+            """\
+#pragma once
+
+int foo(void);
+
+"""
+        )
 
     clangd_file = _create_path(directory / ".clangd")
     clangd_file.write_text(

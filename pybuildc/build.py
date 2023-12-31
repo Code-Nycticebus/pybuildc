@@ -22,6 +22,10 @@ class Compiler:
             out=out,
             args=(
                 self._config.cc,
+                "-Werror",
+                "-Wall",
+                "-Wextra",
+                "-pedantic",
                 *map(lambda f: f"-I{f}", self._config.include_dirs),
                 "-c",
                 str(src),
@@ -78,13 +82,9 @@ def build(config: ConfigFile, cflags: list[str]):
 
     cc = Compiler(config)
 
-    output = _validate_path(
-        config.bin_dir / config.name
-        if config.bin == "exe"
-        else config.bin_dir / f"lib{config.name}.a"
+    src_files = tuple(
+        filter(lambda f: f.name.endswith(".c") and "bin" not in f.parts, config.files)
     )
-
-    src_files = tuple(filter(lambda f: f.name.endswith(".c"), config.files))
     obj_files = tuple(map(lambda f: _create_obj_filename(config, f), src_files))
 
     compile_files = tuple(src for src in src_files if src in config.cache.cache)
@@ -95,8 +95,31 @@ def build(config: ConfigFile, cflags: list[str]):
         cmd = cc.compile_obj(src, _validate_path(_create_obj_filename(config, src)))
         subprocess.run(cmd.args, check=True)
 
+    bin_files = {
+        f.with_suffix("").name for f in (config.dir / "src" / "bin").rglob("**/*.c")
+    }
+
+    if config.exe in bin_files:
+        bin_file = config.dir / "src" / "bin" / f"{config.exe}.c"
+    elif config.exe != None:
+        raise Exception("pls choose from these binaries:", bin_files)
+    else:
+        bin_file = config.dir / "src" / "bin" / f"{config.name}.c"
+
+    output = _validate_path(
+        config.bin_dir / bin_file.with_suffix("").name
+        if config.bin == "exe"
+        else config.bin_dir / f"lib{config.name}.a"
+    )
+
     cmd = (
-        cc.compile_exe(obj_files, output)
+        cc.compile_exe(
+            (
+                *obj_files,
+                bin_file,
+            ),
+            output,
+        )
         if config.bin == "exe"
         else cc.compile_lib(obj_files, output)
     )

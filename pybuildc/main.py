@@ -15,16 +15,23 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
         case "build":
             build(ConfigFile.load(args.dir, args.build_dir, args.mode), argv)
         case "run":
-            subprocess.run(
-                [build(ConfigFile.load(args.dir, args.build_dir, args.mode), []), *argv]
-            )
+            config = ConfigFile.load(args.dir, args.build_dir, args.mode)
+            config.exe = args.exe
+            if config.bin == "exe":
+                subprocess.run([build(config, []), *argv])
+            else:
+                raise Exception("project not runnable")
 
         case action:
             raise Exception(f"{action} is not implemented yet")
 
     os.chdir(args.dir)
     build_commands(
-        ConfigFile.load(args.dir.relative_to(args.dir), args.build_dir, args.mode)
+        ConfigFile.load(
+            directory=args.dir.relative_to(args.dir),
+            build_dir=args.build_dir,
+            mode=args.mode,
+        )
     )
 
 

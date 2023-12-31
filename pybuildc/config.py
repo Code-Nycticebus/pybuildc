@@ -51,13 +51,6 @@ class Dependency:
         project: Path, build_dir: Path, dep: str, config
     ) -> tuple[Dependency, ...]:
         dir: Path = Path(project, config["dir"])
-        config_file = None
-        if config.get("rebuild", False) or not build_dir.exists():
-            config_file = ConfigFile.load(
-                dir,
-                build_dir / dep / config.get("mode", "release"),
-                config.get("mode", "release"),
-            )
 
         return (
             Dependency(
@@ -67,7 +60,11 @@ class Dependency:
                 path=dir,
                 include_dirs=(dir / "src",),
                 cflags=config.get("cflags", ()),
-                config=config_file,
+                config=ConfigFile.load(
+                    directory=dir,
+                    build_dir=build_dir / dep / config.get("mode", "release"),
+                    mode=config.get("mode", "release"),
+                ),
             ),
             *_load_dependencies(
                 dir,
@@ -205,6 +202,7 @@ class ConfigFile:
 
     build_dir: Path
     bin_dir: Path
+    exe: str | None = None
 
     @staticmethod
     def load(
