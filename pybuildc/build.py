@@ -87,11 +87,13 @@ def build(config: ConfigFile, cflags: list[str]):
     src_files = tuple(filter(lambda f: f.name.endswith(".c"), config.files))
     obj_files = tuple(map(lambda f: _create_obj_filename(config, f), src_files))
 
-    for n, (obj, src) in enumerate(zip(obj_files, src_files)):
-        cmd = cc.compile_obj(src, _validate_path(obj))
-        if src in config.cache.cache:
-            print(f"[{config.name}][{(n+1)/len(obj_files): 5.0%}]: compiling {src}")
-            subprocess.run(cmd.args, check=True)
+    compile_files = tuple(src for src in src_files if src in config.cache.cache)
+    for n, src in enumerate(compile_files):
+        if n == 0:
+            print(f"[pybuildc] building '{config.name}'")
+        print(f"  [{(n+1)/len(compile_files): 5.0%}]: compiling '{src}'")
+        cmd = cc.compile_obj(src, _validate_path(_create_obj_filename(config, src)))
+        subprocess.run(cmd.args, check=True)
 
     cmd = (
         cc.compile_exe(obj_files, output)
@@ -99,6 +101,8 @@ def build(config: ConfigFile, cflags: list[str]):
         else cc.compile_lib(obj_files, output)
     )
     subprocess.run(cmd.args)
+    if 0 < len(compile_files):
+        print(f"[pybuildc] finished '{config.name}'")
 
     config.save_cache()
     return output
@@ -114,16 +118,15 @@ def build_commands(config: ConfigFile):
         )
     )
 
-    commands = []
-    for src in src_files:
-        commands.append(
-            {
-                "file": str(src),
-                "arguments": cc.compile_obj(src, src.with_suffix(".o")).args,
-                "directory": str(config.dir.absolute()),
-            }
-        )
-
     _validate_path(config.dir / ".build" / "compile_commands.json").write_text(
-        json.dumps(commands)
+        json.dumps(
+            [
+                {
+                    "file": str(src),
+                    "arguments": cc.compile_obj(src, src.with_suffix(".o")).args,
+                    "directory": str(config.dir.absolute()),
+                }
+                for src in src_files
+            ]
+        )
     )
