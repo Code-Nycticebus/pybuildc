@@ -1,9 +1,11 @@
+import subprocess
 import sys
-from pybuildc.new import new
+import os
 
+from pybuildc.new import new
 from pybuildc.args import ArgsConfig, args_parse
-from pybuildc.config import config_load
-from pybuildc.builder import build
+from pybuildc.config import ConfigFile
+from pybuildc.build import build, build_commands
 
 
 def pybuildc(args: ArgsConfig, argv: list[str]):
@@ -11,12 +13,25 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
         case "new":
             new(args)
         case "build":
-            build(config_load(args.directory), argv)
+            build(ConfigFile.load(args.dir, args.build_dir, args.mode), argv)
+        case "run":
+            subprocess.run(
+                [build(ConfigFile.load(args.dir, args.build_dir, args.mode), []), *argv]
+            )
 
         case action:
             raise Exception(f"{action} is not implemented yet")
 
+    os.chdir(args.dir)
+    build_commands(
+        ConfigFile.load(args.dir.relative_to(args.dir), args.build_dir, args.mode)
+    )
+
 
 def main():
     args, argv = args_parse(sys.argv[1:])
-    pybuildc(args, argv)
+    try:
+        pybuildc(args, argv)
+    except subprocess.CalledProcessError as e:
+        failed_cmd = e.args[1]
+        print(f"[pybuildc] Error: {' '.join(failed_cmd)}")
