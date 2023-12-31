@@ -36,7 +36,7 @@ int main(void) {
 """
     )
 
-    clangd_file = _create_path(directory / ".clagd")
+    clangd_file = _create_path(directory / ".clangd")
     clangd_file.write_text(
         """\
 CompileFlags:
