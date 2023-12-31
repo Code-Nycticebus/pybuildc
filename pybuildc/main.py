@@ -12,21 +12,24 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
     match args.action:
         case "new":
             new(args)
+
         case "build":
             config = ConfigFile.load(args.dir, args.build_dir, args.mode)
             build(config, argv)
             config.save_cache()
+
         case "run":
             config = ConfigFile.load(args.dir, args.build_dir, args.mode)
             config.exe = args.exe
             config.bin = "exe"
             subprocess.run([build(config, []), *argv])
-
             config.save_cache()
+
         case "test":
             config = ConfigFile.load(args.dir, args.build_dir, args.mode)
             test(config)
             config.save_cache()
+
         case action:
             raise Exception(f"{action} is not implemented yet")
 
