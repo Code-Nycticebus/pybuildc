@@ -1,0 +1,29 @@
+[project]
+name = "pybuildc"
+description = "a build system for the c language"
+authors = [
+    { name = "loris kriyonas", email = "loris.kriyonas@gmail.com" }
+]
+readme = "readme.md"
+keywords = ["c"]
+classifiers = [
+    "programming language :: python :: 3",
+    "programming language :: python :: 3.11",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "importlib-metadata; python_version<'3.11'"
+]
+dynamic=["version"]
+
+[project.scripts]
+pybuildc = "pybuildc.main:main"
+
+[build-system]
+requires = ["setuptools>=42", "wheel", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "pybuildc/__version__.py"
+
+
