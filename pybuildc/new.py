@@ -21,11 +21,6 @@ def new(config: ArgsConfig):
 name = "{directory.name}"
 cc = "clang"
 bin = "exe"
-
-[build]
-    
-[deps]
-
 """
     )
 
