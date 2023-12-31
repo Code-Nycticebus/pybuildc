@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Literal, Protocol
 import argparse
 
+from pybuildc.__version__ import __version__
+
 
 class ArgsConfig(Protocol):
     action: str
@@ -21,6 +23,7 @@ def args_parse(argv: list[str]) -> tuple[ArgsConfig, list[str]]:
     parser.add_argument("-d", "--dir", type=Path, default=Path.cwd())
     parser.add_argument("-bd", "--build-dir")
     parser.add_argument("-m", "--mode", choices=("debug", "release"), default="debug")
+    parser.add_argument("--version", action="version", version=__version__)
 
     subparser = parser.add_subparsers(dest="action", required=True)
 
