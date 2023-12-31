@@ -4,6 +4,7 @@ import argparse
 
 
 class ArgsConfig(Protocol):
+    action: str
     directory: Path
 
 
@@ -15,7 +16,10 @@ def args_parse(argv: list[str]) -> tuple[ArgsConfig, list[str]]:
     )
     parser.add_argument("-d", "--directory", type=Path, default=Path.cwd())
 
-    subparser = parser.add_subparsers(required=True)
+    subparser = parser.add_subparsers(dest="action", required=True)
+
+    new = subparser.add_parser("new")
+    new.add_argument("directory", type=Path)
 
     subparser.add_parser("build")
     subparser.add_parser("run")
