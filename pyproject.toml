@@ -24,6 +24,6 @@ requires = ["setuptools>=42", "wheel", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "pybuildc/__version__.py"
+version_file = "pybuildc/__version__.py"
 
 
