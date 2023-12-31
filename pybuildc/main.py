@@ -5,7 +5,7 @@ import os
 from pybuildc.new import new
 from pybuildc.args import ArgsConfig, args_parse
 from pybuildc.config import ConfigFile
-from pybuildc.build import build, build_commands
+from pybuildc.build import build, build_commands, test
 
 
 def pybuildc(args: ArgsConfig, argv: list[str]):
@@ -13,7 +13,9 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
         case "new":
             new(args)
         case "build":
-            build(ConfigFile.load(args.dir, args.build_dir, args.mode), argv)
+            config = ConfigFile.load(args.dir, args.build_dir, args.mode)
+            build(config, argv)
+            config.save_cache()
         case "run":
             config = ConfigFile.load(args.dir, args.build_dir, args.mode)
             config.exe = args.exe
@@ -21,7 +23,11 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
                 subprocess.run([build(config, []), *argv])
             else:
                 raise Exception("project not runnable")
-
+            config.save_cache()
+        case "test":
+            config = ConfigFile.load(args.dir, args.build_dir, args.mode)
+            test(config)
+            config.save_cache()
         case action:
             raise Exception(f"{action} is not implemented yet")
 

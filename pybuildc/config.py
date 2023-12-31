@@ -146,7 +146,7 @@ class Cache:
         self.files = tuple(
             chain(
                 (directory / "src").rglob("./**/*.[h|c]"),
-                (directory / "tests").rglob("./**/*.[h|c]"),
+                (directory / "test").rglob("./**/*.[h|c]"),
                 sum(
                     (
                         tuple((d.config.dir / "src").rglob("./**/*.[h|c]"))
@@ -197,6 +197,7 @@ class ConfigFile:
     cache: Cache
     dependencies: tuple[Dependency, ...]
     include_dirs: tuple[Path, ...]
+    cflags: list[str]
 
     files: tuple[Path, ...]
 
@@ -228,6 +229,7 @@ class ConfigFile:
             cache=cache,
             dependencies=deps,
             include_dirs=include_dirs,
+            cflags=file["pybuildc"].pop("cflags", ()),
             **file["pybuildc"],
         )
 

@@ -1,10 +1,11 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
+import os
 from pathlib import Path
 import subprocess
 import json
 
-from pybuildc.config import ConfigFile
+from pybuildc.config import ConfigFile, Dependency
 
 
 @dataclass
@@ -14,18 +15,28 @@ class Command:
 
 
 class Compiler:
-    def __init__(self, config: ConfigFile) -> None:
+    def __init__(self, config: ConfigFile, cflags: list[str]) -> None:
         self._config = config
+        self.cflags = []
+        self.cflags.extend(config.cflags)
+        self.cflags.extend(cflags)
+        self.cflags.extend(
+            ("-O2",)
+            if config.mode == "release"
+            else (
+                "-Werror",
+                "-Wall",
+                "-Wextra",
+                "-pedantic",
+            )
+        )
 
     def compile_obj(self, src: Path, out: Path) -> Command:
         return Command(
             out=out,
             args=(
                 self._config.cc,
-                "-Werror",
-                "-Wall",
-                "-Wextra",
-                "-pedantic",
+                *self.cflags,
                 *map(lambda f: f"-I{f}", self._config.include_dirs),
                 "-c",
                 str(src),
@@ -39,6 +50,7 @@ class Compiler:
             out=out,
             args=(
                 self._config.cc,
+                *self.cflags,
                 *map(lambda f: f"-I{f}", self._config.include_dirs),
                 *map(str, src_files),
                 *sum(
@@ -79,8 +91,9 @@ def build(config: ConfigFile, cflags: list[str]):
     for d in config.dependencies:
         if d.config:
             build(d.config, [])
+            d.config.save_cache()
 
-    cc = Compiler(config)
+    cc = Compiler(config, cflags)
 
     src_files = tuple(
         filter(lambda f: f.name.endswith(".c") and "bin" not in f.parts, config.files)
@@ -125,17 +138,16 @@ def build(config: ConfigFile, cflags: list[str]):
     )
     subprocess.run(cmd.args)
 
-    config.save_cache()
     return output
 
 
 def build_commands(config: ConfigFile):
-    cc = Compiler(config)
+    cc = Compiler(config, [])
 
     src_files = tuple(
         map(
             lambda file: file.relative_to(config.dir),
-            filter(lambda f: f.name.endswith(".c"), config.files),
+            filter(lambda f: f.name.endswith(".c"), config.cache.files),
         )
     )
 
@@ -151,3 +163,55 @@ def build_commands(config: ConfigFile):
             ]
         )
     )
+
+
+def test(config: ConfigFile):
+    config.bin = "static"
+
+    build(config, [])
+
+    config.dependencies = (
+        *config.dependencies,
+        Dependency(
+            name=config.name,
+            lib_name=config.name,
+            lib_dir=config.bin_dir,
+            path=config.dir,
+            include_dirs=(config.dir / "src",),
+            cflags=(),
+            config=config,
+        ),
+    )
+    cc = Compiler(
+        config,
+        [],
+    )
+
+    tests = tuple(
+        (
+            _validate_path(
+                config.build_dir
+                / "test"
+                / file.with_suffix("").relative_to(config.dir / "test")
+            ),
+            file,
+        )
+        for file in (config.dir / "test").rglob("**/*-test.c")
+    )
+    test_files = tuple((out, file) for out, file in tests if file in config.cache.cache)
+    if len(test_files):
+        print(f"[pybuildc]: building tests: '{config.name}'")
+    for n, (out, file) in enumerate(test_files):
+        cmd = cc.compile_exe(
+            (file,),
+            out,
+        )
+        print(f"  [{(n+1)/len(test_files): 5.0%}]: compiling '{file}'")
+        subprocess.run(cmd.args, check=True)
+
+    cwd = Path.cwd()
+    os.chdir(config.dir)
+    for test, _ in tests:
+        if subprocess.run([test.relative_to(config.dir)]).returncode != 0:
+            raise Exception(f"Test failed: {test.name}")
+    os.chdir(cwd)
