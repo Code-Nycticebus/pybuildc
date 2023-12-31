@@ -109,31 +109,40 @@ class Cache:
 
     def _build_dependency_dict(
         self, files: tuple[Path, ...], include_dirs: tuple[Path, ...]
-    ) -> dict[Path, tuple[Path, ...]]:
-        deps: dict[Path, tuple[Path, ...]] = defaultdict(tuple)
+    ) -> dict[Path, list[Path]]:
+        deps: dict[Path, list[Path]] = defaultdict(list)
         for file in files:
             for line in file.open().readlines():
                 if line.startswith("#include") and '"' in line:
                     idx = line.find('"')
                     include = line[idx + 1 : line.find('"', idx + 1)]
                     include_files = tuple(
-                        filter(
-                            lambda f: f.exists(),
-                            map(lambda d: d / include, include_dirs),
-                        )
+                        f
+                        for f in (d / include for d in include_dirs + (file.parent,))
+                        if f.exists()
                     )
-                    deps[file] = include_files
-
+                    deps[file].extend(include_files)
+                    deps[file].extend(
+                        self._build_dependency_dict(include_files, include_dirs)
+                    )
         return deps
 
     def _has_changed_dep(
-        self, file: Path, deps: dict[Path, tuple[Path, ...]], cache: set[Path]
+        self, file: Path, deps: dict[Path, list[Path]], cache: set[Path]
     ) -> bool:
         if file in cache:
             return True
         if cache.intersection(deps[file]):
+            cache.add(file)
             return True
-        return any(map(lambda f: self._has_changed_dep(f, deps, cache), deps[file]))
+        dep_files = {
+            dep for dep in deps[file] if self._has_changed_dep(dep, deps, cache)
+        }
+        if len(dep_files):
+            cache.update(dep_files)
+            return True
+
+        return False
 
     def _load_cache(
         self,
@@ -167,7 +176,6 @@ class Cache:
             for file in self.files
             if self.file_m_times.get(file, 0) < file.stat().st_mtime
         }
-
         included_files = self._build_dependency_dict(self.files, include_dir)
         self.cache.update(
             filter(
