@@ -101,8 +101,6 @@ def build(config: ConfigFile, cflags: list[str]):
         else cc.compile_lib(obj_files, output)
     )
     subprocess.run(cmd.args)
-    if 0 < len(compile_files):
-        print(f"[pybuildc] finished '{config.name}'")
 
     config.save_cache()
     return output
