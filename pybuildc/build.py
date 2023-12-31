@@ -121,13 +121,15 @@ def build(config: ConfigFile, cflags: list[str]):
     build_tests(config)
 
     if config.bin == "exe":
+        bin_file = None
         if config.exe == None:
             bin_file = config.dir / "src" / "bin" / f"{config.name}.c"
         elif config.exe in bin_files:
             bin_file = config.dir / "src" / "bin" / f"{config.exe}.c"
-        else:
-            raise Exception(f"Cant run this project: {config.exe} -> {bin_files}")
-
+        if not bin_file or not bin_file.exists():
+            raise Exception(
+                f"Cant run this binary: '{bin_file.with_suffix('').name if bin_file else config.exe}' -> {bin_files if len(bin_files) else '{}'}"
+            )
         exe = _validate_path(config.bin_dir / bin_file.with_suffix("").name)
         cmd = cc.compile_exe((library, bin_file), exe)
         subprocess.run(cmd.args)
@@ -139,13 +141,6 @@ def build(config: ConfigFile, cflags: list[str]):
 def build_commands(config: ConfigFile):
     cc = Compiler(config, [])
 
-    src_files = tuple(
-        map(
-            lambda file: file.relative_to(config.dir),
-            filter(lambda f: f.name.endswith(".c"), config.cache.files),
-        )
-    )
-
     _validate_path(config.dir / ".build" / "compile_commands.json").write_text(
         json.dumps(
             [
@@ -154,7 +149,7 @@ def build_commands(config: ConfigFile):
                     "arguments": cc.compile_obj(src, src.with_suffix(".o")).args,
                     "directory": str(config.dir.absolute()),
                 }
-                for src in src_files
+                for src in config.cache.files
             ]
         )
     )
