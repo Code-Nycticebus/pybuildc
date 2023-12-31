@@ -88,9 +88,9 @@ def build(config: ConfigFile, cflags: list[str]):
     obj_files = tuple(map(lambda f: _create_obj_filename(config, f), src_files))
 
     compile_files = tuple(src for src in src_files if src in config.cache.cache)
+    if len(compile_files):
+        print(f"[pybuildc] building '{config.name}'")
     for n, src in enumerate(compile_files):
-        if n == 0:
-            print(f"[pybuildc] building '{config.name}'")
         print(f"  [{(n+1)/len(compile_files): 5.0%}]: compiling '{src}'")
         cmd = cc.compile_obj(src, _validate_path(_create_obj_filename(config, src)))
         subprocess.run(cmd.args, check=True)
