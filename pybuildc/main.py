@@ -31,6 +31,7 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
 
     os.chdir(args.dir)
     args.dir = Path(".")
+    args.action = "command"
     with context_load(args) as context:
         build_commands(context)
 
