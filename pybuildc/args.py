@@ -1,16 +1,17 @@
 from pathlib import Path
-from typing import Literal, Protocol
+from typing import Protocol
 import argparse
 
 from pybuildc.__version__ import __version__
+from pybuildc.types import Action, Bin, Mode
 
 
 class ArgsConfig(Protocol):
-    action: str
+    action: Action
     dir: Path
-    mode: Literal["debug"] | Literal["release"]
-    build_dir: str
-    bin: Path | None
+    mode: Mode
+    build_dir: Path | None
+    bin: Bin
     exe: str | None
 
 

@@ -1,11 +1,12 @@
+import os
+from pathlib import Path
 import subprocess
 import sys
-import os
 
 from pybuildc.new import new
 from pybuildc.args import ArgsConfig, args_parse
-from pybuildc.config import ConfigFile
-from pybuildc.build import build, build_commands, test
+from pybuildc.context import context_load
+from pybuildc.build import build, run, test, build_commands
 
 
 def pybuildc(args: ArgsConfig, argv: list[str]):
@@ -14,33 +15,24 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
             new(args)
 
         case "build":
-            config = ConfigFile.load(args.dir, args.build_dir, args.mode)
-            build(config, argv)
-            config.save_cache()
+            with context_load(args) as context:
+                build(context)
 
         case "run":
-            config = ConfigFile.load(args.dir, args.build_dir, args.mode)
-            config.exe = args.exe
-            config.bin = "exe"
-            config.save_cache()
-            subprocess.run([build(config, []), *argv], check=True)
+            with context_load(args) as context:
+                run(context, argv)
 
         case "test":
-            config = ConfigFile.load(args.dir, args.build_dir, args.mode)
-            test(config)
-            config.save_cache()
+            with context_load(args) as context:
+                test(context)
 
         case action:
             raise Exception(f"{action} is not implemented yet")
 
     os.chdir(args.dir)
-    build_commands(
-        ConfigFile.load(
-            directory=args.dir.relative_to(args.dir),
-            build_dir=args.build_dir,
-            mode=args.mode,
-        )
-    )
+    args.dir = Path(".")
+    with context_load(args) as context:
+        build_commands(context)
 
 
 def main():

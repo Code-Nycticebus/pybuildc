@@ -1,217 +1,97 @@
-from collections.abc import Iterable
-from dataclasses import dataclass
-import os
+import json
 from pathlib import Path
 import subprocess
-import json
-
-from pybuildc.config import ConfigFile, Dependency
-
-
-@dataclass
-class Command:
-    out: Path
-    args: tuple[str, ...]
+from pybuildc.context import Context
+from pybuildc.compiler import Compiler
 
 
-class Compiler:
-    def __init__(self, config: ConfigFile, cflags: list[str]) -> None:
-        self._config = config
-        self.cflags = []
-        self.cflags.extend(config.cflags)
-        self.cflags.extend(cflags)
-        self.cflags.extend(
-            ("-O2",)
-            if config.mode == "release"
-            else (
-                "-Werror",
-                "-Wall",
-                "-Wextra",
-                "-pedantic",
-            )
-        )
+def build(context: Context) -> Path:
+    for dep in context.dependencies:
+        dep.build()
 
-    def compile_obj(self, src: Path, out: Path) -> Command:
-        return Command(
-            out=out,
-            args=(
-                self._config.cc,
-                *self.cflags,
-                *map(lambda f: f"-I{f}", self._config.include_dirs),
-                "-c",
-                str(src),
-                "-o",
-                str(out),
-            ),
-        )
+    name = context.config["pybuildc"]["name"]
 
-    def compile_exe(self, src_files: Iterable[Path], out: Path) -> Command:
-        return Command(
-            out=out,
-            args=(
-                self._config.cc,
-                *self.cflags,
-                *map(lambda f: f"-I{f}", self._config.include_dirs),
-                *map(str, src_files),
-                *sum(
-                    map(
-                        lambda d: (f"-L{d.lib_dir}", f"-l{d.lib_name}")
-                        if d.lib_dir
-                        else (f"-l{d.lib_name}",),
-                        self._config.dependencies,
+    # create obj files
+    obj_files = tuple(
+        context.files.build / "obj" / f.with_suffix(".o").name
+        for f in context.files.src_files
+    )
+
+    compile = tuple(
+        (obj, src)
+        for obj, src in zip(obj_files, context.files.src_files)
+        if src in context.cache
+    )
+    cc = Compiler(context)
+    if len(compile):
+        print(f"[pybuildc] building '{name}'")
+    for n, (obj, src) in enumerate(compile):
+        print(f"  [{(n+1)/len(compile):5.0%} ]: compiling '{src}'")
+        subprocess.run(cc.compile_obj(src, obj), check=True)
+
+    library = context.files.bin / f"lib{name}.a"
+    subprocess.run(cc.compile_lib(obj_files, library))
+    bin_files = tuple((context.files.project / "src" / "bin").rglob("**/*.c"))
+    if len(bin_files):
+        for bin in bin_files:
+            if len(compile):
+                print(f"  [pybuildc] bin: '{bin}'")
+                subprocess.run(
+                    cc.compile_exe(
+                        bin, library, context.files.bin / bin.with_suffix("").name
                     ),
-                    (),
-                ),
-                "-o",
-                str(out),
-            ),
-        )
-
-    def compile_lib(self, src_files: Iterable[Path], out: Path):
-        return Command(
-            out=out,
-            args=("ar", "rcs", str(out), *map(str, src_files)),
-        )
-
-
-def _validate_path(path: Path) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def _create_obj_filename(config: ConfigFile, file: Path) -> Path:
-    return (
-        config.build_dir
-        / "obj"
-        / file.relative_to(config.dir / "src").with_suffix(".o")
-    )
-
-
-def build(config: ConfigFile, cflags: list[str]):
-    for d in config.dependencies:
-        if d.config:
-            build(d.config, [])
-            d.config.save_cache()
-
-    cc = Compiler(config, cflags)
-
-    src_files = tuple(
-        filter(lambda f: f.name.endswith(".c") and "bin" not in f.parts, config.files)
-    )
-    obj_files = tuple(map(lambda f: _create_obj_filename(config, f), src_files))
-
-    compile_files = tuple(src for src in src_files if src in config.cache.cache)
-    if len(compile_files):
-        print(f"[pybuildc] building '{config.name}'")
-    for n, src in enumerate(compile_files):
-        print(f"  [{(n+1)/len(compile_files): 5.0%}]: compiling '{src}'")
-        cmd = cc.compile_obj(src, _validate_path(_create_obj_filename(config, src)))
-        subprocess.run(cmd.args, check=True)
-
-    bin_files = {
-        f.with_suffix("").name for f in (config.dir / "src" / "bin").rglob("**/*.c")
-    }
-
-    library = _validate_path(config.bin_dir / f"lib{config.name}.a")
-
-    cmd = cc.compile_lib(obj_files, library)
-    subprocess.run(cmd.args, check=True)
-
-    if config.bin == "exe":
-        bin_file = None
-        if config.exe == None:
-            bin_file = config.dir / "src" / "bin" / f"{config.name}.c"
-        elif config.exe in bin_files:
-            bin_file = config.dir / "src" / "bin" / f"{config.exe}.c"
-        if not bin_file or not bin_file.exists():
-            raise Exception(
-                f"Cant run this binary: '{bin_file.with_suffix('').name if bin_file else config.exe}' -> {bin_files if len(bin_files) else '{}'}"
-            )
-        exe = _validate_path(config.bin_dir / bin_file.with_suffix("").name)
-        cmd = cc.compile_exe((library, bin_file), exe)
-        subprocess.run(cmd.args, check=True)
-        return exe
+                    check=True,
+                )
 
     return library
 
 
-def build_commands(config: ConfigFile):
-    cc = Compiler(config, [])
+def run(context: Context, argv: list[str]):
+    build(context)
+    bin_files = tuple(map(lambda f: f.with_suffix("").name, context.files.bin_files))
+    if context.args.exe == None:
+        context.args.exe = context.config["pybuildc"]["name"]
 
-    _validate_path(config.dir / ".build" / "compile_commands.json").write_text(
+    if context.args.exe in bin_files:
+        subprocess.run(
+            [context.files.bin / context.args.exe, *argv],
+        )
+    else:
+        print(f"[pybuildc]: binary '{context.args.exe}' not found -> {bin_files}")
+
+
+def test(context: Context):
+    lib = build(context)
+    cc = Compiler(context)
+    for file in context.files.test_files:
+        bin = (
+            context.files.build
+            / "test"
+            / file.relative_to(context.files.test).with_suffix("")
+        )
+        subprocess.run(
+            cc.compile_exe(file, lib, bin),
+            check=True,
+        )
+        ret = subprocess.run([bin])
+        if ret.returncode != 0:
+            print(f"[pybuildc] test failed: {file.with_suffix('').name}")
+
+
+def build_commands(context: Context):
+    cc = Compiler(context)
+
+    (context.files.project / ".build" / "compile_commands.json").write_text(
         json.dumps(
             [
                 {
                     "file": str(src),
-                    "arguments": cc.compile_obj(src, src.with_suffix(".o")).args,
-                    "directory": str(config.dir.absolute()),
+                    "arguments": cc.compile_obj(src, src.with_suffix(".o")),
+                    "directory": str(context.files.project.absolute()),
                 }
-                for src in config.cache.files
+                for src in context.files.src_files
+                + context.files.bin_files
+                + context.files.test_files
             ]
         )
     )
-
-
-def build_tests(config: ConfigFile):
-    config.dependencies = (
-        *config.dependencies,
-        Dependency(
-            name=config.name,
-            lib_name=config.name,
-            lib_dir=config.bin_dir,
-            path=config.dir,
-            include_dirs=(config.dir / "src",),
-            cflags=(),
-            config=config,
-        ),
-    )
-    cc = Compiler(
-        config,
-        [],
-    )
-    tests = (
-        (
-            _validate_path(
-                config.build_dir
-                / "test"
-                / file.with_suffix("").relative_to(config.dir / "test")
-            ),
-            file,
-        )
-        for file in (config.dir / "test").rglob("**/*-test.c")
-    )
-
-    rebuild: bool = True  # TODO find a way to recompile tests only when library changes
-    test_files = tuple(
-        (out, file) for out, file in tests if rebuild or file in config.cache.cache
-    )
-    if len(test_files):
-        print(f"[pybuildc]: building tests: '{config.name}'")
-        for n, (out, file) in enumerate(test_files):
-            cmd = cc.compile_exe(
-                (file,),
-                out,
-            )
-            print(f"  [{(n+1)/len(test_files): 5.0%}]: compiling '{file}'")
-            subprocess.run(cmd.args, check=True)
-
-
-def test(config: ConfigFile):
-    config.bin = "static"
-    build(config, [])
-    build_tests(config)
-
-    tests = tuple(
-        config.build_dir
-        / "test"
-        / file.with_suffix("").relative_to(config.dir / "test")
-        for file in sorted(
-            (config.dir / "test").rglob("**/*-test.c"), key=lambda f: f.stat().st_mtime
-        )
-    )
-    cwd = Path.cwd()
-    os.chdir(config.dir)
-    for test in tests:
-        if subprocess.run([test.relative_to(config.dir)]).returncode != 0:
-            raise Exception(f"Test failed: {test.name}")
-    os.chdir(cwd)
