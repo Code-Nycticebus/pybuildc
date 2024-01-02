@@ -112,13 +112,10 @@ def build(config: ConfigFile, cflags: list[str]):
         f.with_suffix("").name for f in (config.dir / "src" / "bin").rglob("**/*.c")
     }
 
-    bin_file = config.bin_dir / f"lib{config.name}.a"
-    library = _validate_path(bin_file)
+    library = _validate_path(config.bin_dir / f"lib{config.name}.a")
 
     cmd = cc.compile_lib(obj_files, library)
-    subprocess.run(cmd.args)
-
-    build_tests(config)
+    subprocess.run(cmd.args, check=True)
 
     if config.bin == "exe":
         bin_file = None
@@ -132,7 +129,7 @@ def build(config: ConfigFile, cflags: list[str]):
             )
         exe = _validate_path(config.bin_dir / bin_file.with_suffix("").name)
         cmd = cc.compile_exe((library, bin_file), exe)
-        subprocess.run(cmd.args)
+        subprocess.run(cmd.args, check=True)
         return exe
 
     return library
@@ -183,7 +180,11 @@ def build_tests(config: ConfigFile):
         )
         for file in (config.dir / "test").rglob("**/*-test.c")
     )
-    test_files = tuple((out, file) for out, file in tests if file in config.cache.cache)
+
+    rebuild: bool = True  # TODO find a way to recompile tests only when library changes
+    test_files = tuple(
+        (out, file) for out, file in tests if rebuild or file in config.cache.cache
+    )
     if len(test_files):
         print(f"[pybuildc]: building tests: '{config.name}'")
         for n, (out, file) in enumerate(test_files):
@@ -198,6 +199,7 @@ def build_tests(config: ConfigFile):
 def test(config: ConfigFile):
     config.bin = "static"
     build(config, [])
+    build_tests(config)
 
     tests = tuple(
         config.build_dir

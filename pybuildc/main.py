@@ -22,8 +22,8 @@ def pybuildc(args: ArgsConfig, argv: list[str]):
             config = ConfigFile.load(args.dir, args.build_dir, args.mode)
             config.exe = args.exe
             config.bin = "exe"
-            subprocess.run([build(config, []), *argv])
             config.save_cache()
+            subprocess.run([build(config, []), *argv], check=True)
 
         case "test":
             config = ConfigFile.load(args.dir, args.build_dir, args.mode)
@@ -49,4 +49,4 @@ def main():
         pybuildc(args, argv)
     except subprocess.CalledProcessError as e:
         failed_cmd = e.args[1]
-        print(f"[pybuildc] Error: '{' '.join(failed_cmd)}'")
+        print(f"[pybuildc] Error: '{' '.join(map(str, failed_cmd))}'")

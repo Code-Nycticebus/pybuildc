@@ -32,19 +32,23 @@ pybuildc new <project name>
 ### Build
 When building a Project of a pybuildc.toml file has to be in the specified directory.
 Default directory is the current working directory.
-It will build a executable binary if ```src/main.c``` exists, else it will build a ```.a``` static library.
 
 ```terminal
 pybuildc build
 ```
 ### Run
-The Project is runnable if ```src/main.c``` exists.
 
+The Project is runs file that is located in ```src/bin/```. By default it tries to run the file with the project name (eg. ```src/bin/<project name>.c```).
 ```terminal
 pybuildc run
 ```
+
+You can change the target with the ```-e``` flag: 
+```terminal
+pybuildc run --exe <other>
+```  
 ### Test
-Compiles all ```*-test.c``` files in the ```tests/``` directory and runs all. It excludes the ```src/main.c``` file.
+Compiles all ```*-test.c``` files in the ```test/``` directory and runs all. 
 
 ```terminal
 pybuildc test
