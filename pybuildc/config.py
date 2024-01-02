@@ -112,19 +112,20 @@ class Cache:
     ) -> dict[Path, list[Path]]:
         deps: dict[Path, list[Path]] = defaultdict(list)
         for file in files:
-            for line in file.open().readlines():
-                if line.startswith("#include") and '"' in line:
-                    idx = line.find('"')
-                    include = line[idx + 1 : line.find('"', idx + 1)]
-                    include_files = tuple(
-                        f
-                        for f in (d / include for d in include_dirs + (file.parent,))
-                        if f.exists()
-                    )
-                    deps[file].extend(include_files)
-                    deps[file].extend(
-                        self._build_dependency_dict(include_files, include_dirs)
-                    )
+            with file.open(encoding="utf-8") as f: 
+                for line in f.readlines():
+                    if line.startswith("#include") and '"' in line:
+                        idx = line.find('"')
+                        include = line[idx + 1 : line.find('"', idx + 1)]
+                        include_files = tuple(
+                            f
+                            for f in (d / include for d in include_dirs + (file.parent,))
+                            if f.exists()
+                        )
+                        deps[file].extend(include_files)
+                        deps[file].extend(
+                            self._build_dependency_dict(include_files, include_dirs)
+                        )
         return deps
 
     def _has_changed_dep(
