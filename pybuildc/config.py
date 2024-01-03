@@ -9,12 +9,12 @@ from pybuildc.types import Mode
 class Project(TypedDict):
     name: str
     cc: str
-    bin: Literal["exe"] | Literal["static"]
+    bin: Literal["exe", "static"]
     cflags: list[str]
 
 
 class DepConfig(TypedDict):
-    type: Literal["pybuildc"] | Literal["static"]
+    type: Literal["pybuildc", "static"]
     mode: Mode
     dir: str
     L: Path
