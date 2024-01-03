@@ -12,6 +12,10 @@ class Dependency(Protocol):
     config: DepConfig
 
     @cached_property
+    def cflags(self) -> tuple[str, ...]:
+        ...
+
+    @cached_property
     def lib(self) -> tuple[Path, str]:
         ...
 
@@ -29,12 +33,16 @@ class Static(Dependency):
         self.config = config
 
     @cached_property
+    def cflags(self) -> tuple[str, ...]:
+        raise NotImplementedError()
+
+    @cached_property
     def lib(self) -> tuple[Path, str]:
         raise NotImplementedError()
 
     @cached_property
     def include(self) -> tuple[Path, ...]:
-        return tuple(self.config.get("I", ()))
+        raise NotImplementedError()
 
     def build(self):
         raise NotImplementedError()
@@ -46,11 +54,15 @@ class Pybuildc(Dependency):
         self.dir = files.project / config["dir"]
         self.config = config
         self.file = config_load(self.dir / "pybuildc.toml")
-        self.build_dir = files.build / name
+        self.build_dir = files.build / "deps" / name
         self.files = files_load(
             self.dir, self.config.get("mode", "release"), build=self.build_dir
         )
         self.deps = dependencies_load(self.files, self.file.get("deps", {}))
+
+    @cached_property
+    def cflags(self) -> tuple[str, ...]:
+        return sum((f.cflags for f in self.deps), tuple(self.config["cflags"]))
 
     @cached_property
     def lib(self) -> tuple[Path, str]:
@@ -77,6 +89,7 @@ class Pybuildc(Dependency):
             build_dir = self.build_dir
             bin = "static"
             exe = None
+            cflags = list(self.cflags)
 
         with context_load(Args) as context:  # type: ignore
             build(context)

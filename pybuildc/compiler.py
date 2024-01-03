@@ -22,6 +22,7 @@ class Compiler:
         )
         self.cflags = ["-Werror", "-Wall", "-Wextra", "-pedantic"]
         self.cflags.extend(("-g",) if context.args.mode == "debug" else ("-O2",))
+        self.cflags.extend(context.args.cflags)
         self.cflags.extend(context.config["pybuildc"].get("cflags", ()))
 
     def compile_obj(self, infile: Path, outfile: Path) -> Cmd:

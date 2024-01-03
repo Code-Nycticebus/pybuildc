@@ -27,7 +27,7 @@ def _get_dep_of_file(file: Path, include_dirs: tuple[Path, ...]) -> list[Path]:
 def dependency_tree(files: Files, include_dirs: tuple[Path, ...]) -> DepTree:
     deps: DepTree = defaultdict(list)
 
-    for file in files.src.rglob("**/*.[c|h]"):
+    for file in files.all_files:
         deps[file] = _get_dep_of_file(file, include_dirs)
 
     return deps
@@ -44,7 +44,7 @@ class Cache:
 
         self.cache = {
             f
-            for f in files.src.rglob("**/*.[c|h]")
+            for f in files.all_files
             if self.file_m_times.get(f, 0) < f.stat().st_mtime
             or any(
                 map(lambda i: self.file_m_times.get(i, 0) < i.stat().st_mtime, deps[f])

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+import itertools
 
 from pybuildc.types import Mode
 
@@ -15,6 +16,7 @@ class Files:
     src_files: tuple[Path, ...]
     bin_files: tuple[Path, ...]
     test_files: tuple[Path, ...]
+    all_files: tuple[Path, ...]
 
     def ensure(self):
         self.build.mkdir(parents=True, exist_ok=True)
@@ -28,7 +30,7 @@ class Files:
                 parents=True, exist_ok=True
             )
         for file in self.test_files:
-            (self.build / "test" / file.relative_to(self.test)).parent.mkdir(
+            (self.build / "tests" / file.relative_to(self.test)).parent.mkdir(
                 parents=True, exist_ok=True
             )
         return self
@@ -41,10 +43,13 @@ def files_load(dir: Path, mode: Mode, build: Path | None = None):
         bin=build / "bin",
         build=build,
         src=dir / "src",
-        test=dir / "test",
-        src_files=tuple(
-            f for f in (dir / "src").rglob("**/*.c") if "bin" not in f.parts
+        test=dir / "tests",
+        src_files=tuple(f for f in (dir / "src").rglob("*.c") if "bin" not in f.parts),
+        bin_files=tuple((dir / "src" / "bin").rglob("*.c")),
+        test_files=tuple((dir / "tests").rglob("*-test.c")),
+        all_files=tuple(
+            itertools.chain(
+                (dir / "tests").rglob("*.[c|h]"), (dir / "src").rglob("*.c")
+            )
         ),
-        bin_files=tuple((dir / "src" / "bin").rglob("**/*.c")),
-        test_files=tuple((dir / "test").rglob("**/*-test.c")),
     ).ensure()

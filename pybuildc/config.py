@@ -20,6 +20,7 @@ class DepConfig(TypedDict):
     L: Path
     l: str
     I: list[Path]
+    cflags: list[str]
 
 
 class Config(TypedDict):

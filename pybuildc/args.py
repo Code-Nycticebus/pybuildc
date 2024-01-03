@@ -13,6 +13,7 @@ class ArgsConfig(Protocol):
     build_dir: Path | None
     bin: Bin
     exe: str | None
+    cflags: list[str]
 
 
 def args_parse(argv: list[str]) -> tuple[ArgsConfig, list[str]]:
@@ -25,6 +26,7 @@ def args_parse(argv: list[str]) -> tuple[ArgsConfig, list[str]]:
     parser.add_argument("-bd", "--build-dir")
     parser.add_argument("-m", "--mode", choices=("debug", "release"), default="debug")
     parser.add_argument("--version", action="version", version=__version__)
+    parser.add_argument("--cflags", default=tuple())
 
     subparser = parser.add_subparsers(dest="action", required=True)
 
