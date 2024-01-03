@@ -51,7 +51,7 @@ class Cache:
             )
         }
 
-    def __contains__(self, key):
+    def __contains__(self, key) -> bool:
         return key in self.cache
 
     def save(self):

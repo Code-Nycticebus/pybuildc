@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Literal, TypedDict
 
-import tomllib as toml
+import tomllib
 
 from pybuildc.types import Mode
 
@@ -28,5 +28,4 @@ class Config(TypedDict):
 
 
 def config_load(filename: Path) -> Config:
-    config = toml.loads(filename.read_text())
-    return Config(**config)  # type: ignore
+    return Config(**tomllib.loads(filename.read_text()))  # type: ignore

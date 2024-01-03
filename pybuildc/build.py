@@ -46,7 +46,7 @@ def build(context: Context) -> Path:
     return library
 
 
-def run(context: Context, argv: list[str]):
+def run(context: Context, argv: list[str]) -> None:
     build(context)
     bin_files = tuple(map(lambda f: f.with_suffix("").name, context.files.bin_files))
     if context.args.exe == None:
@@ -60,7 +60,7 @@ def run(context: Context, argv: list[str]):
         print(f"[pybuildc]: binary '{context.args.exe}' not found -> {bin_files}")
 
 
-def test(context: Context):
+def test(context: Context) -> None:
     lib = build(context)
     cc = Compiler(context)
     for file in context.files.test_files:
@@ -78,7 +78,7 @@ def test(context: Context):
             print(f"[pybuildc] test failed: {file.with_suffix('').name}")
 
 
-def build_commands(context: Context):
+def build_commands(context: Context) -> None:
     cc = Compiler(context)
 
     (context.files.project / ".build" / "compile_commands.json").write_text(
