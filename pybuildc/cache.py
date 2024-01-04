@@ -5,7 +5,6 @@ from pathlib import Path
 from pybuildc.types import Action
 from pybuildc.files import Files
 
-
 DepTree = dict[Path, list[Path]]
 
 
@@ -14,22 +13,23 @@ class Cache:
         self.filename = filename
         self.cache: set[Path] = set()
         self.deps = self.dependency_tree(files, include_dirs)
-        try:
-            self.file_m_times = pickle.loads(filename.read_bytes())
-        except FileNotFoundError:
-            self.file_m_times = {}
+        self.file_m_times = (
+            pickle.loads(filename.read_bytes()) if filename.exists() else dict()
+        )
 
-        self.cache.update({
-            f
-            for f in files.all_files
-            if self.file_m_times.get(f, 0) < f.stat().st_mtime
-            or any(
-                map(
-                    lambda i: self.file_m_times.get(i, 0) < i.stat().st_mtime,
-                    self.deps[f],
+        self.cache.update(
+            {
+                f
+                for f in files.all_files
+                if self.file_m_times.get(f, 0) < f.stat().st_mtime
+                or any(
+                    (
+                        self.file_m_times.get(include, 0) < include.stat().st_mtime
+                        for include in self.deps[f]
+                    )
                 )
-            )
-        })
+            }
+        )
 
     def __contains__(self, key) -> bool:
         return key in self.cache
@@ -38,8 +38,7 @@ class Cache:
         file_m_times = {}
         for file, files in self.deps.items():
             file_m_times[file] = file.stat().st_mtime
-            for f in files:
-                file_m_times[f] = f.stat().st_mtime
+            file_m_times.update({f: f.stat().st_mtime for f in files})
         self.filename.write_bytes(pickle.dumps(file_m_times))
 
     def _get_dep_of_file(
@@ -63,10 +62,8 @@ class Cache:
 
     def dependency_tree(self, files: Files, include_dirs: tuple[Path, ...]) -> DepTree:
         deps: DepTree = defaultdict(list)
-
         for file in files.all_files:
             deps[file] = self._get_dep_of_file(file, include_dirs)
-
         return deps
 
 
