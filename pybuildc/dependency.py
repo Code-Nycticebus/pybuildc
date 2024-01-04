@@ -66,7 +66,7 @@ class Pybuildc(Dependency):
 
     @cached_property
     def cflags(self) -> tuple[str, ...]:
-        return sum((f.cflags for f in self.deps), tuple(self.config["cflags"]))
+        return sum((f.cflags for f in self.deps), tuple(self.config.get("cflags", ())))
 
     @cached_property
     def lib(self) -> tuple[str, ...]:
