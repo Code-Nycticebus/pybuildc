@@ -20,7 +20,34 @@ class Compiler:
             ),
             (),
         )
-        self.cflags = ["-Werror", "-Wall", "-Wextra", "-pedantic"]
+        self.cflags = [
+            "-Werror",
+            "-Wall",
+            "-Wextra",
+            "-Wconversion",
+            "-Waggregate-return",
+            "-Wbad-function-cast",
+            "-Wcast-align",
+            "-Wcast-qual",
+            "-Wdeclaration-after-statement",
+            "-Wfloat-equal",
+            "-Wformat=2",
+            "-Wmissing-declarations",
+            "-Wmissing-include-dirs",
+            "-Wmissing-prototypes",
+            "-Wnested-externs",
+            "-Wpointer-arith",
+            "-Wredundant-decls",
+            "-Wsequence-point",
+            "-Wshadow",
+            "-Wstrict-prototypes",
+            "-Wswitch",
+            "-Wundef",
+            "-Wunreachable-code",
+            "-Wunused-but-set-parameter",
+            "-Wwrite-strings",
+            "-pedantic",
+        ]
         self.cflags.extend(("-g",) if context.args.mode == "debug" else ("-O2",))
         self.cflags.extend(context.args.cflags)
         self.cflags.extend(context.config["pybuildc"].get("cflags", ()))
