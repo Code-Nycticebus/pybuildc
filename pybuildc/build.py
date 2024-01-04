@@ -93,7 +93,7 @@ def test(context: Context) -> None:
     for bin, out in zip(bin_files, out_files):
         ret = subprocess.run([out])
         if ret.returncode != 0:
-            print(f" [test] failed: {bin}")
+            print(f"[test] failed: {bin}")
 
 
 def build_commands(context: Context) -> None:
