@@ -6,12 +6,13 @@ from pybuildc.compiler import Compiler
 
 
 def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
+    rebuild = False
     for dep in context.dependencies:
-        dep.build()
+        if dep.build() == True:
+            rebuild = True
 
     name = context.config["pybuildc"]["name"]
 
-    # create obj files
     obj_files = tuple(
         context.files.build / "obj" / f.with_suffix(".o").name
         for f in context.files.src_files
@@ -31,20 +32,18 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
     library = context.files.bin / f"lib{name}.a"
     subprocess.run(cc.compile_lib(obj_files, library))
 
-    return library, bool(compile)
+    return library, rebuild or bool(compile)
 
 
-def build(context: Context) -> Path:
-    for dep in context.dependencies:
-        dep.build()
-
+def build(context: Context) -> bool:
     cc = Compiler(context)
-
     library, compile = _build_library(context, cc)
 
+    rebuild = False
     bin_files = (context.files.project / "src" / "bin").rglob("*.c")
     for bin in bin_files:
         if compile or bin in context.cache:
+            rebuild = True
             print(f"  [pybuildc] bin: '{bin}'")
             subprocess.run(
                 cc.compile_exe(
@@ -53,7 +52,7 @@ def build(context: Context) -> Path:
                 check=True,
             )
 
-    return library
+    return compile or rebuild
 
 
 def run(context: Context, argv: list[str]) -> None:

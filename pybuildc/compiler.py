@@ -15,7 +15,7 @@ class Compiler:
         )
         self.lib = sum(
             map(
-                lambda x: (f"-L{x[0]}", f"-l{x[1]}"),
+                lambda x: (f"-L{x[0]}", f"-l{x[1]}") if len(x) == 2 else (f"-l{x[0]}",),
                 map(lambda f: f.lib, context.dependencies),
             ),
             (),

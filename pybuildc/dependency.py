@@ -8,6 +8,7 @@ from pybuildc.config import DepConfig, config_load
 
 
 class Dependency(Protocol):
+    name: str
     dir: Path
     config: DepConfig
 
@@ -16,36 +17,39 @@ class Dependency(Protocol):
         ...
 
     @cached_property
-    def lib(self) -> tuple[Path, str]:
+    def lib(self) -> tuple[str, ...]:
         ...
 
     @cached_property
     def include(self) -> tuple[Path, ...]:
         ...
 
-    def build(self):
+    def build(self) -> bool:
         ...
 
 
 class Static(Dependency):
-    def __init__(self, dir: Path, config: DepConfig):
-        self.dir = dir
+    def __init__(self, name: str, dir: Path, config: DepConfig):
+        self.name = name
+        self.dir = dir / config["dir"]
         self.config = config
 
     @cached_property
     def cflags(self) -> tuple[str, ...]:
-        raise NotImplementedError()
+        return tuple(self.config.get("cflags", ()))
 
     @cached_property
-    def lib(self) -> tuple[Path, str]:
-        raise NotImplementedError()
+    def lib(self) -> tuple[str, ...]:
+        if "L" not in self.config and "l" not in self.config:
+            return (self.name,)
+        return str(self.dir / self.config["L"]), self.config["l"]
 
     @cached_property
     def include(self) -> tuple[Path, ...]:
-        raise NotImplementedError()
+        return tuple(self.dir / f for f in self.config["I"])
 
-    def build(self):
-        raise NotImplementedError()
+    def build(self) -> bool:
+        return False
 
 
 class Pybuildc(Dependency):
@@ -65,8 +69,8 @@ class Pybuildc(Dependency):
         return sum((f.cflags for f in self.deps), tuple(self.config["cflags"]))
 
     @cached_property
-    def lib(self) -> tuple[Path, str]:
-        return self.build_dir / "bin", self.name
+    def lib(self) -> tuple[str, ...]:
+        return str(self.build_dir / "bin"), self.name
 
     @cached_property
     def include(self) -> tuple[Path, ...]:
@@ -92,7 +96,7 @@ class Pybuildc(Dependency):
             cflags = list(self.cflags)
 
         with context_load(Args) as context:  # type: ignore
-            build(context)
+            return build(context)
 
 
 def dependencies_load(files: Files, config: dict[str, DepConfig]) -> list[Dependency]:
@@ -100,7 +104,7 @@ def dependencies_load(files: Files, config: dict[str, DepConfig]) -> list[Depend
     for dep, conf in config.items():
         match conf.get("type", "static"):
             case "static":
-                deps.append(Static(files.project, conf))
+                deps.append(Static(dep, files.project, conf))
             case "pybuildc":
                 deps.append(Pybuildc(dep, files, conf))
 
