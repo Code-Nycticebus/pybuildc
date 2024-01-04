@@ -26,11 +26,14 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
     if compile:
         print(f"[pybuildc] building '{name}'")
     for n, (obj, src) in enumerate(compile):
-        print(f"  [{(n+1)/len(compile):5.0%} ]: compiling '{src}'")
+        print(f"  [{(n)/len(compile):5.0%} ]: compiling '{src}'")
         subprocess.run(cc.compile_obj(src, obj), check=True)
 
+
     library = context.files.bin / f"lib{name}.a"
-    subprocess.run(cc.compile_lib(obj_files, library))
+    if compile:
+        print(f"  [ 100% ]: compiling '{library}'")
+        subprocess.run(cc.compile_lib(obj_files, library))
 
     return library, rebuild or bool(compile)
 
