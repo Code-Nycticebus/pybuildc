@@ -29,7 +29,6 @@ class Compiler:
             "-Wbad-function-cast",
             "-Wcast-align",
             "-Wcast-qual",
-            "-Wdeclaration-after-statement",
             "-Wfloat-equal",
             "-Wformat=2",
             "-Wmissing-declarations",
