@@ -10,6 +10,7 @@ DepTree = dict[Path, list[Path]]
 
 class Cache:
     def __init__(self, files: Files, filename: Path, include_dirs: tuple[Path, ...]):
+        self.project = files.project
         self.filename = filename
         self.cache: set[Path] = set()
         self.deps = self.dependency_tree(files, include_dirs)
@@ -50,7 +51,7 @@ class Cache:
                 if line.startswith("#include") and line.count('"') == 2:
                     idx = line.index('"') + 1
                     include = line[idx : line.index('"', idx)]
-                    for includes in include_dirs:
+                    for includes in (*include_dirs, file.parent):
                         include_file = includes / include
                         if include_file.exists():
                             l.append(include_file)
