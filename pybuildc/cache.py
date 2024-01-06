@@ -10,7 +10,6 @@ DepTree = dict[Path, list[Path]]
 
 class Cache:
     def __init__(self, files: Files, filename: Path, include_dirs: tuple[Path, ...]):
-        self.project = files.project
         self.filename = filename
         self.cache: set[Path] = set()
         self.deps = self.dependency_tree(files, include_dirs)
