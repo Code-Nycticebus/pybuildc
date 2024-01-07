@@ -23,17 +23,16 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
         for obj, src in zip(obj_files, context.files.src_files)
         if src in context.cache
     )
-    if compile:
-        rebuild = True
-        print(f"[pybuildc] building '{name}'")
-    for n, (obj, src) in enumerate(compile):
-        print(f"  [{(n)/len(compile):5.0%} ]: compiling '{src}'")
-        subprocess.run(cc.compile_obj(src, obj), check=True)
 
     library = context.files.bin / f"lib{name}.a"
-    if compile:
+    if rebuild or compile:
+        rebuild = True
+        print(f"[pybuildc] building '{name}'")
+        for n, (obj, src) in enumerate(compile):
+            print(f"  [{(n)/len(compile):5.0%} ]: compiling '{src}'")
+            subprocess.run(cc.compile_obj(src, obj), check=True)
         print(f"  [ 100% ]: compiling '{library}'")
-        subprocess.run(cc.compile_lib(obj_files, library))
+        subprocess.run(cc.compile_lib(obj_files, library), check=True)
 
     return library, rebuild
 
@@ -43,11 +42,10 @@ def build(context: Context) -> bool:
     library, compile = _build_library(context, cc)
 
     rebuild = False
-    bin_files = (context.files.project / "src" / "bin").rglob("*.c")
-    for bin in bin_files:
+    for bin in (context.files.project / "src" / "bin").rglob("*.c"):
         if compile or bin in context.cache:
             rebuild = True
-            print(f"  [pybuildc] bin: '{bin}'")
+            print(f"  [bin] '{bin}'")
             subprocess.run(
                 cc.compile_exe(
                     bin, library, context.files.bin / bin.with_suffix("").name
@@ -94,8 +92,7 @@ def test(context: Context) -> None:
             )
 
     for bin, out in zip(bin_files, out_files):
-        ret = subprocess.run([out])
-        if ret.returncode != 0:
+        if subprocess.run([out]).returncode != 0:
             print(f"[test] failed: {bin}")
 
 
