@@ -25,7 +25,6 @@ class Compiler:
             "-Wall",
             "-Wextra",
             "-Wconversion",
-            "-Waggregate-return",
             "-Wbad-function-cast",
             "-Wcast-align",
             "-Wcast-qual",
