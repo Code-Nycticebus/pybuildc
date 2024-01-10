@@ -26,7 +26,6 @@ class Compiler:
             "-Wextra",
             "-Wconversion",
             "-Wbad-function-cast",
-            "-Wcast-align",
             "-Wcast-qual",
             "-Wfloat-equal",
             "-Wformat=2",
