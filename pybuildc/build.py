@@ -32,7 +32,7 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
             print(f"  [{(n)/len(compile):5.0%} ]: compiling '{src}'")
             subprocess.run(cc.compile_obj(src, obj), check=True)
         print(f"  [ 100% ]: compiling '{library}'")
-        subprocess.run(cc.compile_lib(obj_files, library), check=True)
+    subprocess.run(cc.compile_lib(obj_files, library), check=True)
 
     return library, rebuild
 
