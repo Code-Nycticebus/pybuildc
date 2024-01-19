@@ -14,7 +14,7 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
     name = context.config["pybuildc"]["name"]
 
     obj_files = tuple(
-        context.files.build / "obj" / f.with_suffix(".o").name
+        context.files.build / "obj" / f.relative_to(context.files.src).with_suffix(".o")
         for f in context.files.src_files
     )
 
