@@ -69,4 +69,4 @@ CompileFlags:
 """
     )
 
-    subprocess.run(["git", "init"])
+    subprocess.run(["git", "init", directory])
