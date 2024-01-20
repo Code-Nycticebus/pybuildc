@@ -20,7 +20,7 @@ class Files:
 
     def ensure(self):
         self.build.mkdir(parents=True, exist_ok=True)
-        (self.build / ".gitignore").write_text("*")
+        (self.build.parent / ".gitignore").write_text("*")
         self.bin.mkdir(exist_ok=True)
         for file in self.src_files:
             (self.build / "obj" / file.relative_to(self.src)).parent.mkdir(
