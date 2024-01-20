@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 
 from pybuildc.args import ArgsConfig
 
@@ -20,36 +21,34 @@ def new(config: ArgsConfig):
 [pybuildc]
 name = "{directory.name}"
 cc = "clang"
-bin = "exe"
+bin = "{"exe" if config.bin else "static"}"
 """
     )
 
     if config.bin:
         src_file = _create_path(directory / "src" / "bin" / f"{directory.name}.c")
         src_file.write_text(
-            """\
+            f"""\
 #include<stdio.h>
 
-int main(void) {
-    printf("Hello, World\\n");
-}
+int main(void) {{
+    printf("Hello, {directory.name}\\n");
+}}
 
 """
         )
     else:
         src_file = _create_path(directory / "src" / f"{directory.name}.c")
         src_file.write_text(
-            """\
-#include"{TEXT}.h"
+            f"""\
+#include"{directory.name}.h"
 #include<stdio.h>
 
-int foo(void) {
+int foo(void) {{
     printf("Hello, World\\n");
-}
+}}
 
-""".replace(
-                "{TEXT}", directory.name
-            )
+"""
         )
         inc_file = _create_path(directory / "src" / f"{directory.name}.h")
         inc_file.write_text(
@@ -69,3 +68,5 @@ CompileFlags:
     CompilationDatabase: .build/
 """
     )
+
+    subprocess.run(["git", "init"])
