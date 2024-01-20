@@ -6,6 +6,9 @@ from pybuildc.compiler import Compiler
 
 
 def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
+    for script in context.config.get("build", {}).get("scripts", {}).values():
+        subprocess.run(script.split())
+
     rebuild = False
     for dep in context.dependencies:
         if dep.build() == True:

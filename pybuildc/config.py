@@ -23,9 +23,14 @@ class DepConfig(TypedDict):
     cflags: list[str]
 
 
+class Build(TypedDict):
+    scripts: dict[str, str]
+
+
 class Config(TypedDict):
     pybuildc: Project
     deps: dict[str, DepConfig]
+    build: Build
 
 
 def config_load(filename: Path) -> Config:
