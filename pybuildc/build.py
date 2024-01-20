@@ -78,7 +78,7 @@ def test(context: Context) -> None:
         (
             context.files.build
             / context.files.test.name
-            / bin.relative_to(context.files.test).with_suffix("").name
+            / bin.relative_to(context.files.test).with_suffix("")
         )
         for bin in bin_files
     )
