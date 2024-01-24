@@ -15,7 +15,7 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
             subprocess.run([script["cmd"], *script["args"]])
         os.chdir(cwd)
 
-    rebuild = False
+    rebuild = context.files.config in context.cache
     for dep in context.dependencies:
         if dep.build() == True:
             rebuild = True
@@ -30,7 +30,7 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
     compile = tuple(
         (obj, src)
         for obj, src in zip(obj_files, context.files.src_files)
-        if src in context.cache
+        if rebuild or src in context.cache
     )
 
     library = context.files.bin / f"lib{name}.a"

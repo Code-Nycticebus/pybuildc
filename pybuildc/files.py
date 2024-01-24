@@ -8,6 +8,7 @@ from pybuildc.types import Mode
 @dataclass
 class Files:
     project: Path
+    config: Path
     bin: Path
     build: Path
     src: Path
@@ -37,7 +38,9 @@ class Files:
 
 def files_load(dir: Path, mode: Mode, build: Path | None = None):
     build = build if build else dir / ".build" / mode
+    config = dir / "pybuildc.toml"
     return Files(
+        config=config,
         project=dir,
         bin=build / "bin",
         build=build,
@@ -47,7 +50,9 @@ def files_load(dir: Path, mode: Mode, build: Path | None = None):
         test_files=tuple((dir / "tests").rglob("*-test.c")),
         all_files=tuple(
             itertools.chain(
-                (dir / "tests").rglob("*.[c|h]"), (dir / "src").rglob("*.c")
+                (dir / "tests").rglob("*.[c|h]"),
+                (dir / "src").rglob("*.c"),
+                (config,),
             )
         ),
     ).ensure()
