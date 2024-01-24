@@ -31,7 +31,7 @@ class Dependency(Protocol):
 class Static(Dependency):
     def __init__(self, name: str, dir: Path, config: DepConfig):
         self.name = name
-        self.dir = dir / config["dir"]
+        self.dir = dir
         self.config = config
 
     @cached_property
@@ -40,13 +40,18 @@ class Static(Dependency):
 
     @cached_property
     def lib(self) -> tuple[str, ...]:
-        if "L" not in self.config and "l" not in self.config:
-            return (self.name,)
-        return str(self.dir / self.config["L"]), self.config["l"]
+        if "L" in self.config and "l" in self.config:
+            return (
+                str(self.dir / self.config["dir"] / self.config["L"]),
+                self.config["l"],
+            )
+        return (self.config.get("l", self.name),)
 
     @cached_property
     def include(self) -> tuple[Path, ...]:
-        return tuple(self.dir / f for f in self.config["I"])
+        if "dir" in self.config:
+            return tuple(self.dir / self.config["dir"] / f for f in self.config["I"])
+        return ()
 
     def build(self) -> bool:
         return False
