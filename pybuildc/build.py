@@ -66,9 +66,7 @@ def build(context: Context) -> bool:
 
 def run(context: Context, argv: list[str]) -> None:
     build(context)
-    bin_files: set[str] = set()
-    for exe in context.config.get("exe", ()):
-        bin_files.add(exe)
+    bin_files: set[str] = set(exe for exe in context.config.get("exe", ()))
 
     if context.args.exe == None:
         context.args.exe = context.config["pybuildc"]["name"]
@@ -94,17 +92,42 @@ def test(context: Context) -> None:
         for bin in bin_files
     )
 
-    for bin, out in zip(bin_files, out_files):
-        if compile or bin in context.cache:
-            print(f"  [building] test: '{bin}'")
-            subprocess.run(
-                cc.compile_exe(bin, library, out),
-                check=True,
-            )
+    if context.args.exe == None:
+        # Compile and run all the tests
+        for bin, out in zip(bin_files, out_files):
+            if compile or bin in context.cache:
+                print(f"  [building] test: '{bin}'")
+                subprocess.run(
+                    cc.compile_exe(bin, library, out),
+                    check=True,
+                )
 
-    for bin, out in zip(bin_files, out_files):
-        if subprocess.run([out]).returncode != 0:
-            print(f"[test] failed: {bin}")
+        for bin, out in zip(bin_files, out_files):
+            if subprocess.run([out]).returncode != 0:
+                print(f"[test] failed: {bin}")
+    else:
+        test_files = {
+            file.with_suffix("").name: (file, bin)
+            for file, bin in zip(
+                bin_files,
+                out_files,
+            )
+        }
+        if context.args.exe in test_files:
+            bin, out = test_files[context.args.exe]
+            if compile or bin in context.cache:
+                print(f"  [building] test: '{bin}'")
+                subprocess.run(
+                    cc.compile_exe(bin, library, out),
+                    check=True,
+                )
+            subprocess.run(
+                [out],
+            )
+        else:
+            print(
+                f"[building]: test '{context.args.exe}' not found -> {{{', '.join(test_files.keys())}}}"
+            )
 
 
 def build_commands(context: Context) -> None:

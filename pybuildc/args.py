@@ -38,6 +38,7 @@ def args_parse(argv: list[str]) -> tuple[ArgsConfig, list[str]]:
     run = subparser.add_parser("run")
     run.add_argument("-e", "--exe", default=None)
 
-    subparser.add_parser("test")
+    test = subparser.add_parser("test")
+    test.add_argument("-e", "--exe", default=None)
 
     return parser.parse_known_args(argv)  # type: ignore
