@@ -26,8 +26,8 @@ cc = "clang"
 
     if config.bin:
         with config_file.open("a") as f:
-            f.write("[exe]\n")
-            f.write(f'{directory.name}="src/{directory.name}"\n')
+            f.write("\n[exe]\n")
+            f.write(f'{directory.name}="src/{directory.name}.c"\n')
 
         src_file = _create_path(directory / "src" / f"{directory.name}.c")
         src_file.write_text(
