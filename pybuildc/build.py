@@ -3,11 +3,17 @@ from pathlib import Path
 import subprocess
 from pybuildc.context import Context
 from pybuildc.compiler import Compiler
+import os
 
 
 def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
-    for script in context.config.get("build", {}).get("scripts", {}).values():
-        subprocess.run(script.split())
+    # Build scripts
+    if "build" in context.config and "scripts" in context.config["build"]:
+        cwd = Path.cwd()
+        os.chdir(context.files.project)
+        for script in context.config["build"]["scripts"]:
+            subprocess.run([script["cmd"], *script["args"]])
+        os.chdir(cwd)
 
     rebuild = False
     for dep in context.dependencies:
