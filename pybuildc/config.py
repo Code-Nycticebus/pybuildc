@@ -9,7 +9,6 @@ from pybuildc.types import Mode
 class Project(TypedDict):
     name: str
     cc: str
-    bin: Literal["exe", "static"]
     cflags: list[str]
 
 

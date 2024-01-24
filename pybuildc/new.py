@@ -21,12 +21,15 @@ def new(config: ArgsConfig):
 [pybuildc]
 name = "{directory.name}"
 cc = "clang"
-bin = "{"exe" if config.bin else "static"}"
 """
     )
 
     if config.bin:
-        src_file = _create_path(directory / "src" / "bin" / f"{directory.name}.c")
+        with config_file.open("a") as f:
+            f.write("[exe]\n")
+            f.write(f'{directory.name}="src/{directory.name}"\n')
+
+        src_file = _create_path(directory / "src" / f"{directory.name}.c")
         src_file.write_text(
             f"""\
 #include<stdio.h>
