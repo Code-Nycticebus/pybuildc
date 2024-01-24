@@ -45,14 +45,13 @@ def build(context: Context) -> bool:
     library, compile = _build_library(context, cc)
 
     rebuild = False
-    for bin in (context.files.project / "src" / "bin").rglob("*.c"):
+    for name, file in context.config.get("exe", {}).items():
+        bin = context.files.project / file
         if compile or bin in context.cache:
             rebuild = True
-            print(f"  [bin] '{bin}'")
+            print(f"  [{name}] '{bin}'")
             subprocess.run(
-                cc.compile_exe(
-                    bin, library, context.files.bin / bin.with_suffix("").name
-                ),
+                cc.compile_exe(bin, library, context.files.bin / name),
                 check=True,
             )
 
@@ -61,7 +60,10 @@ def build(context: Context) -> bool:
 
 def run(context: Context, argv: list[str]) -> None:
     build(context)
-    bin_files = tuple(map(lambda f: f.with_suffix("").name, context.files.bin_files))
+    bin_files: set[str] = set()
+    for exe in context.config.get("exe", ()):
+        bin_files.add(exe)
+
     if context.args.exe == None:
         context.args.exe = context.config["pybuildc"]["name"]
 
@@ -111,7 +113,10 @@ def build_commands(context: Context) -> None:
                     "directory": str(context.files.project.absolute()),
                 }
                 for src in context.files.src_files
-                + context.files.bin_files
+                + tuple(
+                    context.files.project / files
+                    for _, files in context.config.get("exe", {}).items()
+                )
                 + context.files.test_files
             ]
         )

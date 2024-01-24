@@ -31,6 +31,7 @@ class Config(TypedDict):
     pybuildc: Project
     deps: dict[str, DepConfig]
     build: Build
+    exe: dict[str, str]
 
 
 def config_load(filename: Path) -> Config:
