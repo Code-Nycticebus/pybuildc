@@ -72,9 +72,10 @@ def run(context: Context, argv: list[str]) -> None:
         context.args.exe = context.config["pybuildc"]["name"]
 
     if context.args.exe in bin_files:
-        subprocess.run(
-            [context.files.bin / context.args.exe, *argv],
-        )
+        try:
+            subprocess.run([context.files.bin / context.args.exe, *argv])
+        except KeyboardInterrupt:
+            pass
     else:
         print(f"[building]: binary '{context.args.exe}' not found -> {bin_files}")
 
