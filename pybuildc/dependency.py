@@ -65,7 +65,10 @@ class Pybuildc(Dependency):
         self.file = config_load(self.dir / "pybuildc.toml")
         self.build_dir = files.build / "deps" / name
         self.files = files_load(
-            self.dir, self.config.get("mode", "release"), build=self.build_dir
+            self.dir,
+            self.config.get("mode", "release"),
+            list(self.file.get("exe", {}).values()),
+            build=self.build_dir,
         )
         self.deps = dependencies_load(self.files, self.file.get("deps", {}))
 

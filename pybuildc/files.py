@@ -36,7 +36,7 @@ class Files:
         return self
 
 
-def files_load(dir: Path, mode: Mode, build: Path | None = None):
+def files_load(dir: Path, mode: Mode, exe_files: list[str], build: Path | None = None):
     build = build if build else dir / ".build" / mode
     config = dir / "pybuildc.toml"
     return Files(
@@ -53,6 +53,7 @@ def files_load(dir: Path, mode: Mode, build: Path | None = None):
                 (dir / "tests").rglob("*.[c|h]"),
                 (dir / "src").rglob("*.c"),
                 (config,),
+                map(lambda f: dir / f, exe_files),
             )
         ),
     ).ensure()

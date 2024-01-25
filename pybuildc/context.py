@@ -23,7 +23,12 @@ def context_load(
     args: ArgsConfig,
 ):
     config = config_load(args.dir / "pybuildc.toml")
-    files = files_load(args.dir, args.mode, build=args.build_dir)
+    files = files_load(
+        args.dir,
+        args.mode,
+        list(config.get("exe", {}).values()),
+        build=args.build_dir,
+    )
     dependencies = dependencies_load(files, config.get("deps", {}))
     cache = cache_load(
         files,
