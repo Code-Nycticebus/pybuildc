@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from pathlib import Path
+import platform
 
 from pybuildc.context import Context
 
@@ -73,4 +74,7 @@ class Compiler:
         )
 
     def compile_lib(self, obj_files: Iterable[Path], library: Path) -> Cmd:
-        return ("ar", "rcs", str(library), *map(str, obj_files))
+        if platform.system() == "Windows":
+            return ("lib", f"/OUT:{library}", *map(str, obj_files))
+        else:
+            return ("ar", "rcs", str(library), *map(str, obj_files))
