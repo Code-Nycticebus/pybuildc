@@ -11,14 +11,18 @@ class Compiler:
     def __init__(self, context: Context):
         self.cc = context.config["pybuildc"]["cc"]
         self.includes = sum(
-            (tuple(map(lambda f: f"-I{f}", d.include)) for d in context.dependencies),
+            map(
+                lambda f: tuple(map(lambda x: f"-I{x}", f.include)),
+                context.dependencies,
+            ),
             (f"-I{context.files.src}",),
         )
-        self.lib = sum(
-            map(
-                lambda x: (f"-L{x[0]}", f"-l{x[1]}") if len(x) == 2 else (f"-l{x[0]}",),
-                map(lambda f: f.lib, context.dependencies),
-            ),
+        self.lib: tuple[str, ...] = sum(
+            map(lambda f: tuple(map(lambda x: f"-L{x}", f.lib)), context.dependencies),
+            (),
+        )
+        self.link: tuple[str, ...] = sum(
+            map(lambda f: tuple(map(lambda x: f"-l{x}", f.link)), context.dependencies),
             (),
         )
         self.cflags = [
@@ -71,6 +75,7 @@ class Compiler:
             str(src),
             str(library),
             *self.lib,
+            *self.link,
         )
 
     def compile_lib(self, obj_files: Iterable[Path], library: Path) -> Cmd:

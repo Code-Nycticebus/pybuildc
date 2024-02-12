@@ -17,7 +17,11 @@ class Dependency(Protocol):
         ...
 
     @cached_property
-    def lib(self) -> tuple[str, ...]:
+    def lib(self) -> tuple[Path, ...]:
+        ...
+
+    @cached_property
+    def link(self) -> tuple[str, ...]:
         ...
 
     @cached_property
@@ -39,13 +43,14 @@ class Static(Dependency):
         return tuple(self.config.get("cflags", ()))
 
     @cached_property
-    def lib(self) -> tuple[str, ...]:
+    def lib(self) -> tuple[Path, ...]:
         if "L" in self.config and "l" in self.config:
-            return (
-                str(self.dir / self.config["dir"] / self.config["L"]),
-                self.config["l"],
-            )
-        return (self.config.get("l", self.name),)
+            return (self.dir / self.config["dir"] / self.config["L"],)
+        return ()
+
+    @cached_property
+    def link(self) -> tuple[str, ...]:
+        return (self.config["l"],)
 
     @cached_property
     def include(self) -> tuple[Path, ...]:
@@ -77,17 +82,33 @@ class Pybuildc(Dependency):
         return sum((f.cflags for f in self.deps), tuple(self.config.get("cflags", ())))
 
     @cached_property
-    def lib(self) -> tuple[str, ...]:
-        return str(self.build_dir / "bin"), self.name
+    def lib(self) -> tuple[Path, ...]:
+        return sum(
+            tuple(map(lambda d: d.lib, self.deps)),
+            (self.build_dir / "bin",),
+        )
+
+    @cached_property
+    def link(self) -> tuple[str, ...]:
+        return sum(
+            tuple(map(lambda d: d.link, self.deps)),
+            (self.name,),
+        )
 
     @cached_property
     def include(self) -> tuple[Path, ...]:
-        return tuple(
+        return sum(
             (
-                *(self.config["I"] if "I" in self.config else ()),
-                *sum((d.include for d in self.deps), ()),
-                self.dir / "src",
-            )
+                tuple(
+                    (
+                        *(self.config["I"] if "I" in self.config else ()),
+                        *sum((d.include for d in self.deps), ()),
+                        self.dir / "src",
+                    )
+                ),
+                *map(lambda d: d.include, self.deps),
+            ),
+            (),
         )
 
     def build(self):
