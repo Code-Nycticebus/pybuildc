@@ -52,7 +52,7 @@ class Cache:
                     include = line[idx : line.index('"', idx)]
                     for includes in (*include_dirs, file.parent):
                         include_file = includes / include
-                        if include_file.exists():
+                        if include_file.exists() and include_file != file:
                             l.append(include_file)
                             l.extend(self._get_dep_of_file(include_file, include_dirs))
                             break
