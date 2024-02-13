@@ -44,13 +44,15 @@ class Static(Dependency):
 
     @cached_property
     def lib(self) -> tuple[Path, ...]:
-        if "L" in self.config and "l" in self.config:
+        if "L" in self.config:
             return (self.dir / self.config["dir"] / self.config["L"],)
         return ()
 
     @cached_property
     def link(self) -> tuple[str, ...]:
-        return (self.config["l"],)
+        if "l" in self.config:
+            return (self.config["l"],)
+        return ()
 
     @cached_property
     def include(self) -> tuple[Path, ...]:
