@@ -132,6 +132,11 @@ class Pybuildc(Dependency):
 
 def dependencies_load(files: Files, config: dict[str, DepConfig]) -> list[Dependency]:
     deps: list[Dependency] = []
+
+    config.update(config.pop(platform.system().lower(), {}))  # type: ignore
+    config.pop("windows", None)
+    config.pop("linux", None)
+
     for dep, conf in config.items():
         match conf.get("type", "static"):
             case "static":
