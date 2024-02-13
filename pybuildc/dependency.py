@@ -1,5 +1,6 @@
 from functools import cached_property
 from pathlib import Path
+import platform
 from typing import Protocol
 
 from pybuildc.args import ArgsConfig
