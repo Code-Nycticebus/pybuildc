@@ -50,14 +50,17 @@ class Cache:
                 if line.startswith("#include") and line.count('"') == 2:
                     idx = line.index('"') + 1
                     include = line[idx : line.index('"', idx)]
-                    for includes in (*include_dirs, file.parent):
-                        include_file = includes / include
-                        if include_file.exists() and include_file != file:
-                            l.append(include_file)
-                            l.extend(self._get_dep_of_file(include_file, include_dirs))
-                            break
-                    else:
-                        self.cache.add(file)
+                    if include != file.name:
+                        for includes in (*include_dirs, file.parent):
+                            include_file = includes / include
+                            if include_file.exists():
+                                l.append(include_file)
+                                l.extend(
+                                    self._get_dep_of_file(include_file, include_dirs)
+                                )
+                                break
+                        else:
+                            self.cache.add(file)
         return l
 
     def dependency_tree(self, files: Files, include_dirs: tuple[Path, ...]) -> DepTree:
