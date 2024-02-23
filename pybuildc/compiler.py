@@ -30,6 +30,7 @@ class Compiler:
             "-Wall",
             "-Wextra",
             "-Wshadow",
+            "-Wmissing-include-dirs",
             "-pedantic",
         ]
         self.cflags.extend(
