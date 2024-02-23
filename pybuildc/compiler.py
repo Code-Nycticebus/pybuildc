@@ -36,7 +36,9 @@ class Compiler:
             "-Wstrict-prototypes",
             "-pedantic",
         ]
-        self.cflags.extend(("-g",) if context.args.mode == "debug" else ("-O2",))
+        self.cflags.extend(
+            ("-g",) if context.args.mode == "debug" else ("-O2", "-DNDEBUG")
+        )
         self.cflags.extend(context.args.cflags)
         self.cflags.extend(context.config["pybuildc"].get("cflags", ()))
 
