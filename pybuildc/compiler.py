@@ -33,6 +33,7 @@ class Compiler:
             "-Wmissing-include-dirs",
             "-Wmissing-prototypes",
             "-Wshadow",
+            "-Wconversion",
             "-Wstrict-prototypes",
             "-pedantic",
         ]
