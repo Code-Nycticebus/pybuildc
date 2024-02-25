@@ -39,9 +39,9 @@ pybuildc build
 ### Run
 
 The Project is runs file that are registered as exe in the `pybuildc.toml`. By default it tries to run the file with the project name (eg. `src/bin/<project name>.c`).
-`terminal
+```terminal
 pybuildc run
-`
+```
 
 You can change the target with the ```-e``` flag: 
 ```terminal
