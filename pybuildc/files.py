@@ -10,6 +10,7 @@ class Files:
     project: Path
     config: Path
     bin: Path
+    lib: Path
     build: Path
     src: Path
     test: Path
@@ -22,6 +23,7 @@ class Files:
         self.build.mkdir(parents=True, exist_ok=True)
         (self.build.parent / ".gitignore").write_text("*")
         self.bin.mkdir(exist_ok=True)
+        self.lib.mkdir(exist_ok=True)
         for file in self.src_files:
             (self.build / "obj" / file.relative_to(self.src)).parent.mkdir(
                 parents=True, exist_ok=True
@@ -43,6 +45,7 @@ def files_load(dir: Path, mode: Mode, exe_files: list[str], build: Path | None =
         config=config,
         project=dir,
         bin=build / "bin",
+        lib=build / "lib",
         build=build,
         src=dir / "src",
         test=dir / "tests",

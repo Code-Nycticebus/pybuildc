@@ -4,6 +4,7 @@ import subprocess
 from pybuildc.context import Context
 from pybuildc.compiler import Compiler
 import os
+import platform
 
 
 def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
@@ -33,7 +34,7 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
         if rebuild or src in context.cache
     )
 
-    library = context.files.bin / f"lib{name}.a"
+    library = context.files.lib / f"{name}.lib" if platform.system() == "Windows" else f"lib{name}.a"
     if rebuild or compile:
         rebuild = True
         print(f"[pybuildc] building '{name}'")
@@ -52,6 +53,8 @@ def build(context: Context) -> bool:
 
     rebuild = False
     for name, file in context.config.get("exe", {}).items():
+        if platform.system() == "Windows":
+            name += ".exe"
         bin = context.files.project / file
         if compile or bin in context.cache:
             rebuild = True
@@ -71,8 +74,11 @@ def run(context: Context, argv: list[str]) -> None:
     if context.args.exe == None:
         context.args.exe = context.config["pybuildc"]["name"]
 
+
     if context.args.exe in bin_files:
         try:
+            if platform.system() == "Windows":
+                context.args.exe += ".exe"
             subprocess.run([context.files.bin / context.args.exe, *argv])
         except KeyboardInterrupt:
             pass

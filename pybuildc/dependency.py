@@ -88,7 +88,7 @@ class Pybuildc(Dependency):
     def lib(self) -> tuple[Path, ...]:
         return sum(
             tuple(map(lambda d: d.lib, self.deps)),
-            (self.build_dir / "bin",),
+            (self.build_dir / "lib",),
         )
 
     @cached_property
