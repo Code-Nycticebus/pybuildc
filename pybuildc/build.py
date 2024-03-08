@@ -34,7 +34,9 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
         if rebuild or src in context.cache
     )
 
-    library = context.files.lib / f"{name}.lib" if platform.system() == "Windows" else f"lib{name}.a"
+    library = context.files.lib / (
+        f"{name}.lib" if platform.system() == "Windows" else f"lib{name}.a"
+    )
     if rebuild or compile:
         rebuild = True
         print(f"[pybuildc] building '{name}'")
@@ -73,7 +75,6 @@ def run(context: Context, argv: list[str]) -> None:
 
     if context.args.exe == None:
         context.args.exe = context.config["pybuildc"]["name"]
-
 
     if context.args.exe in bin_files:
         try:
