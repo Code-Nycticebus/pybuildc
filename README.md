@@ -18,9 +18,11 @@ pip install pybuildc
 ### Commands
 1. [New](#new)
 2. [Build](#build)
-2. [Run](#run)
-3. [Test](#test)
-4. [Other Flags](#other-flags)
+3. [Run](#run)
+4. [Test](#test)
+5. [Other Flags](#other-flags)
+6. [Dependencies](#Dependencies)
+6. [Build Scripts](#Build-Scripts)
 
 ### New
 Creates new project with some default files to get a project started. Also generates a ```pybuild.toml``` file with the required options.
