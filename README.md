@@ -29,6 +29,18 @@ Creates new project with some default files to get a project started. Also gener
 pybuildc new <project name>
 ```
 
+This also generates a `pybuildc.toml` file.
+```toml
+[pybuildc]
+name="<PROJECT NAME>"
+cc="clang"
+cflags=[]
+
+[exe]
+<PROJECT NAME>="src/<PROJECT NAME>.c"
+example="examples/example1.c"
+```
+
 ### Build
 When building a Project of a pybuildc.toml file has to be in the specified directory.
 Default directory is the current working directory.
@@ -58,4 +70,27 @@ You can specify the directory of the project using the ```-d``` flag.
 
 ```terminal
 pybuildc -d path/to/project <action>
+```
+
+### Dependencies
+Add dependencies by specifing it as deps. There are different types of dependencies. By default it links statically, but you could also include other `pybuildc` projects. The 
+```toml
+[deps]
+math = { l="m" }
+other_project = { dir="other/project/directory", type="pybuildc" }
+```
+
+if its is a platform specific dependency you can specify it like this:
+```toml
+[deps.linux]
+math = { l="m" }
+```
+
+
+### Build Scripts
+You can add a script that should run everytime the project is build in the config file.
+```toml
+[[build.scripts]]
+cmd="generate.sh"
+args=["<BUILD DIR>"]
 ```
