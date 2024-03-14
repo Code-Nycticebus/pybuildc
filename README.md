@@ -50,7 +50,7 @@ pybuildc build
 ```
 ### Run
 
-The Project is runs file that are registered as exe in the `pybuildc.toml`. By default it tries to run the file with the project name (eg. `src/bin/<project name>.c`).
+The Project is runs file that are registered as exe in the `pybuildc.toml`. By default it tries to run the exe with the project name (eg `pybuildc run -e <PROJECT NAME>`).
 ```terminal
 pybuildc run
 ```
