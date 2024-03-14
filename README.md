@@ -92,7 +92,7 @@ math = { l = "m" }
 ### Build Scripts
 You can add a script that should run everytime the project is build in the config file.
 ```toml
-[[build.scripts]]
-cmd = "generate.sh"
-args = ["<BUILD DIR>"]
+build.scripts = [
+  { cmd = "make", args = ["generate"] },
+]
 ```
