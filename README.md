@@ -10,6 +10,7 @@ Personal build system for the C language.
   - [Test](#test)
   - [Other Flags](#other-flags)
 - [Config](#config)
+  - [Executable](#executable)
   - [Dependencies](#dependencies)
   - [Build Scripts](#build-scripts)
 
@@ -23,22 +24,10 @@ pip install pybuildc
 
 ## Commands
 ### New
-Creates new project with some default files to get a project started. Also generates a ```pybuild.toml``` file with the required options.
+Creates new project with some default files to get a project started. Also generates a `pybuild.toml` file with the required options.
 
 ```terminal
 pybuildc new <project name>
-```
-
-This also generates a `pybuildc.toml` file.
-```toml
-[pybuildc]
-name = "PROJECT"
-cc = "clang"
-cflags = []
-
-[exe]
-PROJECT = "src/PROJECT.c"
-example = "examples/example1.c"
 ```
 
 ### Build
@@ -73,6 +62,21 @@ pybuildc -d path/to/project <action>
 ```
 
 ## Config
+
+```toml
+[pybuildc]
+name = "PROJECT NAME"
+cc = "clang"
+```
+
+
+### Executable
+Register files that should be compiled to a executable like this:
+```toml
+[exe]
+main = "src/main.c"
+example = "examples/example1.c"
+```
 
 ### Dependencies
 Add dependencies by specifing it as deps. There are different types of dependencies. By default it links statically, but you could also include other `pybuildc` projects. The 
