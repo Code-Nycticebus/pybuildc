@@ -2,8 +2,16 @@
 Personal build system for the C language.  
 
 ### Contents
-1. [Install](#install)
-2. [Usage](#usage)
+- [Install](#install)
+- [Commands](#commands)
+  - [New](#new)
+  - [Build](#build)
+  - [Run](#run)
+  - [Test](#test)
+  - [Other Flags](#other-flags)
+- [Config](#config)
+  - [Dependencies](#dependencies)
+  - [Build Scripts](#build-scripts)
 
 ## Install
 I dont have any packaging setup so right now so you have to build it from source.
@@ -13,17 +21,7 @@ git clone https://github.com/Code-Nycticebus/pybuildc.git
 pip install pybuildc
 ```
 
-## Usage
-
-### Commands
-1. [New](#new)
-2. [Build](#build)
-3. [Run](#run)
-4. [Test](#test)
-5. [Other Flags](#other-flags)
-6. [Dependencies](#Dependencies)
-6. [Build Scripts](#Build-Scripts)
-
+## Commands
 ### New
 Creates new project with some default files to get a project started. Also generates a ```pybuild.toml``` file with the required options.
 
@@ -73,6 +71,8 @@ You can specify the directory of the project using the ```-d``` flag.
 ```terminal
 pybuildc -d path/to/project <action>
 ```
+
+## Config
 
 ### Dependencies
 Add dependencies by specifing it as deps. There are different types of dependencies. By default it links statically, but you could also include other `pybuildc` projects. The 
