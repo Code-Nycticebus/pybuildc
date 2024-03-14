@@ -32,13 +32,13 @@ pybuildc new <project name>
 This also generates a `pybuildc.toml` file.
 ```toml
 [pybuildc]
-name="PROJECT"
-cc="clang"
-cflags=[]
+name = "PROJECT"
+cc = "clang"
+cflags = []
 
 [exe]
-PROJECT="src/PROJECT.c"
-example="examples/example1.c"
+PROJECT = "src/PROJECT.c"
+example = "examples/example1.c"
 ```
 
 ### Build
@@ -79,13 +79,13 @@ Add dependencies by specifing it as deps. There are different types of dependenc
 ```toml
 [deps]
 math = { l="m" }
-other_project = { dir="other/project/directory", type="pybuildc" }
+other_project = { dir = "other/project/directory", type = "pybuildc" }
 ```
 
 if its is a platform specific dependency you can specify it like this:
 ```toml
 [deps.linux]
-math = { l="m" }
+math = { l = "m" }
 ```
 
 
@@ -93,6 +93,6 @@ math = { l="m" }
 You can add a script that should run everytime the project is build in the config file.
 ```toml
 [[build.scripts]]
-cmd="generate.sh"
-args=["<BUILD DIR>"]
+cmd = "generate.sh"
+args = ["<BUILD DIR>"]
 ```
