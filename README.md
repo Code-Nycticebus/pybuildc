@@ -32,12 +32,12 @@ pybuildc new <project name>
 This also generates a `pybuildc.toml` file.
 ```toml
 [pybuildc]
-name="<PROJECT NAME>"
+name="PROJECT"
 cc="clang"
 cflags=[]
 
 [exe]
-<PROJECT NAME>="src/<PROJECT NAME>.c"
+PROJECT="src/PROJECT.c"
 example="examples/example1.c"
 ```
 
