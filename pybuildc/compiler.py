@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from pathlib import Path
 import platform
+from distutils.spawn import find_executable
 
 from pybuildc.context import Context
 
@@ -64,7 +65,8 @@ class Compiler:
         )
 
     def compile_lib(self, obj_files: Iterable[Path], library: Path) -> Cmd:
-        if platform.system() == "Windows":
-            return ("lib", f"/OUT:{library}", *map(str, obj_files))
-        else:
+        if find_executable("ar"):
             return ("ar", "rcs", str(library), *map(str, obj_files))
+        elif find_executable("lib"):
+            return ("lib", f"/OUT:{library}", *map(str, obj_files))
+        raise Exception("No library tool found")
