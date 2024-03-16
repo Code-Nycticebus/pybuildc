@@ -80,7 +80,9 @@ def run(context: Context, argv: list[str]) -> None:
         try:
             if platform.system() == "Windows":
                 context.args.exe += ".exe"
-            subprocess.run([context.files.bin / context.args.exe, *argv])
+            subprocess.run(
+                [context.files.bin.relative_to(context.files.project) / context.args.exe, *argv], cwd=context.files.project
+            )
         except KeyboardInterrupt:
             pass
     else:
