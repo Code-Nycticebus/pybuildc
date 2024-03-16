@@ -45,9 +45,18 @@ class Cache:
         self, file: Path, include_dirs: tuple[Path, ...]
     ) -> list[Path]:
         l = list()
+        in_comment: bool = False
         with file.open(encoding="utf-8") as f:
             for line in f.readlines():
-                if line.startswith("#include") and line.count('"') == 2:
+                if "/*" in line:
+                    in_comment = True
+                elif "*/" in line:
+                    in_comment = False
+                elif (
+                    not in_comment
+                    and line.startswith("#include")
+                    and line.count('"') == 2
+                ):
                     idx = line.index('"') + 1
                     include = line[idx : line.index('"', idx)]
                     if include != file.name:
@@ -67,6 +76,7 @@ class Cache:
         deps: DepTree = defaultdict(list)
         for file in files.all_files:
             deps[file] = self._get_dep_of_file(file, include_dirs)
+
         return deps
 
 
