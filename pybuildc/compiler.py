@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from pathlib import Path
 import platform
-from distutils.spawn import find_executable
+import shutil
 
 from pybuildc.context import Context
 
@@ -65,8 +65,8 @@ class Compiler:
         )
 
     def compile_lib(self, obj_files: Iterable[Path], library: Path) -> Cmd:
-        if find_executable("ar"):
+        if shutil.which("ar"):
             return ("ar", "rcs", str(library), *map(str, obj_files))
-        elif find_executable("lib"):
+        elif shutil.which("lib"):
             return ("lib", f"/OUT:{library}", *map(str, obj_files))
         raise Exception("No library tool found")
