@@ -33,30 +33,31 @@ pybuildc new <project name>
 
 ## Build
 When building a Project of a pybuildc.toml file has to be in the specified directory.
-Default directory is the current working directory.
+Default directory is the current working directory. But you can also specify a directory with the `-d` flag.
 
 ```terminal
 pybuildc build
 ```
 ## Run
 
-The Project is runs file that are registered as exe in the `pybuildc.toml`. By default it tries to run the exe with the project name (eg `pybuildc run -e <PROJECT NAME>`).
+The Project runs file that are registered as exe in the `pybuildc.toml`. By default it tries to run the exe with the project name (eg `pybuildc run -e <PROJECT NAME>`).
 ```terminal
 pybuildc run
 ```
 
-You can change the target with the ```-e``` flag: 
+You can change the target with the `-e` flag: 
 ```terminal
-pybuildc run --exe <other>
+pybuildc run -e <other>
 ```  
 ## Test
-Compiles all ```*-test.c``` files in the ```test/``` directory and runs all. 
+Compiles all `*-test.c` files in the `test/` directory and runs all. 
 
 ```terminal
 pybuildc test
 ```
+
 ## Other flags
-You can specify the directory of the project using the ```-d``` flag. 
+You can specify the directory of the project using the `-d` flag. 
 
 ```terminal
 pybuildc -d path/to/project <action>
@@ -94,7 +95,6 @@ if its is a platform specific dependency you can specify it like this:
 [deps.linux]
 math = { l = "m" }
 ```
-
 
 ## Build Scripts
 You can add a script that should run everytime the project is build in the config file.
