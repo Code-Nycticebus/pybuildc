@@ -10,7 +10,13 @@ from pybuildc.types import Cmd
 
 class Compiler:
     def __init__(self, context: Context):
-        self.cc = context.config["pybuildc"]["cc"]
+        if shutil.which("gcc"):
+            self.cc = "gcc"
+        elif shutil.which("clang"):
+            self.cc = "clang"
+        else:
+            raise Exception("No compiler found: install 'gcc' or 'clang'")
+
         self.includes = sum(
             map(
                 lambda f: tuple(map(lambda x: f"-I{x}", f.include)),

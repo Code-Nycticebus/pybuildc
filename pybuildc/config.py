@@ -8,7 +8,6 @@ from pybuildc.types import Mode
 
 class Project(TypedDict):
     name: str
-    cc: str
     cflags: list[str]
 
 
