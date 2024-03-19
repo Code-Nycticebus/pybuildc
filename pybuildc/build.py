@@ -86,7 +86,8 @@ def run(context: Context, argv: list[str]) -> None:
                     / context.args.exe,
                     *argv,
                 ],
-                cwd=context.files.project,
+                cwd=context.files.project.absolute(),
+                shell=True,
             )
         except KeyboardInterrupt:
             pass
