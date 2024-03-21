@@ -33,15 +33,11 @@ class Compiler:
             (),
         )
         self.cflags = [
-            "-Werror",
-            "-Wall",
-            "-Wextra",
-            "-Wshadow",
-            "-Wmissing-include-dirs",
-            "-pedantic",
+
         ]
         self.cflags.extend(
-            ("-g",) if context.args.mode == "debug" else ("-O2", "-DNDEBUG")
+            ("-g", "-Werror", "-Wall", "-Wextra", "-Wshadow", "-Wmissing-include-dirs", "-pedantic") 
+            if context.args.mode == "debug" else ("-O2", "-DNDEBUG")
         )
         self.cflags.extend(context.args.cflags)
         self.cflags.extend(context.config["pybuildc"].get("cflags", ()))
