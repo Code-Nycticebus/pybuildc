@@ -21,19 +21,18 @@ class DepConfig(TypedDict):
     cflags: list[str]
 
 
-class Script(TypedDict):
-    cmd: str
-    args: list[str]
-
-
-class Build(TypedDict):
-    scripts: list[Script]
+class Scripts(TypedDict):
+    class Cmd(TypedDict):
+        cmd: str
+        args: list[str]
+        
+    build: list[Cmd]
 
 
 class Config(TypedDict):
     pybuildc: Project
     deps: dict[str, DepConfig]
-    build: Build
+    scripts: Scripts
     exe: dict[str, str]
 
 

@@ -9,10 +9,10 @@ import platform
 
 def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
     # Build scripts
-    if "build" in context.config and "scripts" in context.config["build"]:
+    if "scripts" in context.config and "build" in context.config["scripts"]:
         cwd = Path.cwd()
         os.chdir(context.files.project)
-        for script in context.config["build"]["scripts"]:
+        for script in context.config["scripts"]["build"]:
             subprocess.run([script["cmd"], *script["args"]])
         os.chdir(cwd)
 

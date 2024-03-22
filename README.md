@@ -96,10 +96,10 @@ if its is a platform specific dependency you can specify it like this:
 math = { l = "m" }
 ```
 
-## Build Scripts
-You can add a script that should run everytime the project is build in the config file.
+## Scripts
+You can add a script that should run everytime the project is build for example in the config file.
 ```toml
-[[build.scripts]]
+[[scripts.build]]
 cmd = "make"
 args = ["generate"]
 ```
