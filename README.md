@@ -103,3 +103,5 @@ You can add a script that should run everytime the project is build for example 
 cmd = "make"
 args = ["generate"]
 ```
+
+## Run script (not implemented) 
