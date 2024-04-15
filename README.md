@@ -64,13 +64,11 @@ pybuildc -d path/to/project <action>
 ```
 
 # Config
-
-## Project Info
-This is the project info required for building a project.
+## Project Config
+This is the minimal `pybuildc.toml` required for building a project. 
 ```toml
 [pybuildc]
 name = "PROJECT NAME"
-cc = "clang"
 ```
 
 
