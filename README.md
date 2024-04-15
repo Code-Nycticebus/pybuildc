@@ -10,7 +10,7 @@ Personal build system for the C language.
   - [Test](#test)
   - [Other Flags](#other-flags)
 - [Config](#config)
-  - [Project Info](#project-info)
+  - [Project Config](#project-info)
   - [Executable](#executable)
   - [Dependencies](#dependencies)
   - [Build Scripts](#build-scripts)
