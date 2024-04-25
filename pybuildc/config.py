@@ -21,11 +21,12 @@ class DepConfig(TypedDict):
     cflags: list[str]
 
 
+class Cmd(TypedDict):
+    cmd: str
+    args: list[str]
+
+
 class Scripts(TypedDict):
-    class Cmd(TypedDict):
-        cmd: str
-        args: list[str]
-        
     build: list[Cmd]
 
 

@@ -1,6 +1,5 @@
 from collections.abc import Iterable
 from pathlib import Path
-import platform
 import shutil
 
 from pybuildc.context import Context
@@ -32,12 +31,19 @@ class Compiler:
             map(lambda f: tuple(map(lambda x: f"-l{x}", f.link)), context.dependencies),
             (),
         )
-        self.cflags = [
-
-        ]
+        self.cflags: list[str] = []
         self.cflags.extend(
-            ("-g", "-Werror", "-Wall", "-Wextra", "-Wshadow", "-Wmissing-include-dirs", "-pedantic") 
-            if context.args.mode == "debug" else ("-O2", "-DNDEBUG")
+            (
+                "-g",
+                "-Werror",
+                "-Wall",
+                "-Wextra",
+                "-Wshadow",
+                "-Wmissing-include-dirs",
+                "-pedantic",
+            )
+            if context.args.mode == "debug"
+            else ("-O2", "-DNDEBUG")
         )
         self.cflags.extend(context.args.cflags)
         self.cflags.extend(context.config["pybuildc"].get("cflags", ()))
