@@ -29,7 +29,7 @@ class Dependency(Protocol):
     def include(self) -> tuple[Path, ...]:
         ...
 
-    def build(self, shared: bool) -> bool:
+    def build(self) -> bool:
         ...
 
 
@@ -61,8 +61,7 @@ class Static(Dependency):
             return tuple(self.dir / self.config["dir"] / f for f in self.config["I"])
         return ()
 
-    def build(self, shared: bool) -> bool:
-        _ = shared
+    def build(self) -> bool:
         return False
 
 
@@ -115,11 +114,9 @@ class Pybuildc(Dependency):
             (),
         )
 
-    def build(self, shared: bool):
+    def build(self):
         from pybuildc.build import build
         from pybuildc.context import context_load
-
-        self.build_dir = Path(self.build_dir, "shared" if shared else "static")
 
         class Args(ArgsConfig):
             action = "build"
@@ -128,9 +125,9 @@ class Pybuildc(Dependency):
             build_dir = self.build_dir
             bin = "static"
             exe = None
-            cflags = list(self.cflags) + ["-fPIC"] if shared else []
+            cflags = list(self.cflags)
 
-        with context_load(Args, shared) as context:  # type: ignore
+        with context_load(Args) as context:  # type: ignore
             return build(context)
 
 

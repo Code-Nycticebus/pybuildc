@@ -7,7 +7,7 @@ import os
 import platform
 
 
-def _build_library(context: Context, cc: Compiler, shared=False) -> tuple[Path, bool]:
+def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
     # Build scripts
     if "scripts" in context.config and "build" in context.config["scripts"]:
         cwd = Path.cwd()
@@ -18,7 +18,7 @@ def _build_library(context: Context, cc: Compiler, shared=False) -> tuple[Path, 
 
     rebuild = context.files.config in context.cache
     for dep in context.dependencies:
-        if dep.build(shared) == True:
+        if dep.build() == True:
             rebuild = True
 
     name = context.config["pybuildc"]["name"]
@@ -70,8 +70,6 @@ def build(context: Context) -> bool:
                 )
 
     if "dll" in context.config:
-        cc = Compiler(context, ["-fPIC"])
-        library, compile = _build_library(context, cc, shared=True)
         if compile:
             print("[pybuildc] building dll")
         for name, file in context.config.get("dll", {}).items():
