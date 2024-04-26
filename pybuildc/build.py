@@ -44,27 +44,51 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
             print(f"  [{(n)/len(compile):5.0%} ]: compiling '{src}'")
             subprocess.run(cc.compile_obj(src, obj), check=True)
         print(f"  [ 100% ]: compiling '{library}'")
-    subprocess.run(cc.compile_lib(obj_files, library), check=True)
+        subprocess.run(cc.compile_lib(obj_files, library), check=True)
 
     return library, rebuild
 
 
 def build(context: Context) -> bool:
-    cc = Compiler(context)
-    library, compile = _build_library(context, cc)
-
+    compile = False
     rebuild = False
-    for name, file in context.config.get("exe", {}).items():
-        if platform.system() == "Windows":
-            name += ".exe"
-        bin = context.files.project / file
-        if compile or bin in context.cache:
-            rebuild = True
-            print(f"  [{name}] '{bin}'")
-            subprocess.run(
-                cc.compile_exe(bin, library, context.files.bin / name),
-                check=True,
-            )
+
+    if "exe" in context.config:
+        cc = Compiler(context)
+        library, compile = _build_library(context, cc)
+        if compile:
+            print("[pybuildc] building exe")
+        for name, file in context.config.get("exe", {}).items():
+            if platform.system() == "Windows":
+                name += ".exe"
+            bin = context.files.project / file
+            if compile or bin in context.cache:
+                rebuild = True
+                print(f"  [{name}] '{bin}'")
+                subprocess.run(
+                    cc.compile_exe(bin, library, context.files.bin / name),
+                    check=True,
+                )
+
+    if "dll" in context.config:
+        cc = Compiler(context, ["-fPIC"])
+        library, compile = _build_library(context, cc)
+        if compile:
+            print("[pybuildc] building dll")
+        for name, file in context.config.get("dll", {}).items():
+            if platform.system() == "Windows":
+                name += ".dll"
+            else:
+                name += ".so"
+
+            bin = context.files.project / file
+            if compile or bin in context.cache:
+                rebuild = True
+                print(f"  [{name}] '{bin}'")
+                subprocess.run(
+                    cc.compile_dll(bin, library, context.files.bin / name),
+                    check=True,
+                )
 
     return compile or rebuild
 

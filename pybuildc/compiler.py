@@ -8,7 +8,7 @@ from pybuildc.types import Cmd
 
 
 class Compiler:
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, cflags: list[str] | None = None):
         if shutil.which("gcc"):
             self.cc = "gcc"
         elif shutil.which("clang"):
@@ -31,7 +31,7 @@ class Compiler:
             map(lambda f: tuple(map(lambda x: f"-l{x}", f.link)), context.dependencies),
             (),
         )
-        self.cflags: list[str] = []
+        self.cflags: list[str] = cflags or []
         self.cflags.extend(
             (
                 "-g",
@@ -57,6 +57,21 @@ class Compiler:
             str(outfile),
             "-c",
             str(infile),
+        )
+
+    def compile_dll(self, src: Path, library: Path, outfile: Path) -> Cmd:
+        self.cflags.remove("-fPIC")
+        return (
+            self.cc,
+            *self.includes,
+            *self.cflags,
+            "-shared",
+            "-o",
+            str(outfile),
+            str(src),
+            str(library),
+            *self.lib,
+            *self.link,
         )
 
     def compile_exe(self, src: Path, library: Path, outfile: Path) -> Cmd:

@@ -35,6 +35,7 @@ class Config(TypedDict):
     deps: dict[str, DepConfig]
     scripts: Scripts
     exe: dict[str, str]
+    dll: dict[str, str]
 
 
 def config_load(filename: Path) -> Config:
