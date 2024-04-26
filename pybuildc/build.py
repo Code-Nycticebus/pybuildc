@@ -50,14 +50,15 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
 
 
 def build(context: Context) -> bool:
+    cc = Compiler(context, ["-fPIC"] if "dll" in context.config else None)
+    library, compile = _build_library(context, cc)
+
     rebuild = False
 
-    cc = Compiler(context)
-    library, compile = _build_library(context, cc)
     if "exe" in context.config:
         if compile:
             print("[pybuildc] building exe")
-        for name, file in context.config.get("exe", {}).items():
+        for name, file in context.config["exe"].items():
             if platform.system() == "Windows":
                 name += ".exe"
             bin = context.files.project / file
@@ -72,7 +73,7 @@ def build(context: Context) -> bool:
     if "dll" in context.config:
         if compile:
             print("[pybuildc] building dll")
-        for name, file in context.config.get("dll", {}).items():
+        for name, file in context.config["dll"].items():
             if platform.system() == "Windows":
                 name += ".dll"
             else:
