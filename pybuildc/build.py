@@ -100,16 +100,20 @@ def run(context: Context, argv: list[str]) -> None:
     if context.args.exe == None:
         context.args.exe = context.config["pybuildc"]["name"]
 
-
     if context.args.exe in bin_files:
         try:
             if platform.system() == "Windows":
                 context.args.exe += ".exe"
             subprocess.run(
-                " ".join([
-                    str(context.files.bin.relative_to(context.files.project) / context.args.exe),
-                    *argv,
-                ]),
+                " ".join(
+                    [
+                        str(
+                            context.files.bin.relative_to(context.files.project)
+                            / context.args.exe
+                        ),
+                        *argv,
+                    ]
+                ),
                 cwd=context.files.project.absolute(),
                 shell=True,
             )
