@@ -119,6 +119,8 @@ class Pybuildc(Dependency):
         from pybuildc.build import build
         from pybuildc.context import context_load
 
+        self.build_dir = Path(self.build_dir, "shared" if shared else "static")
+
         class Args(ArgsConfig):
             action = "build"
             dir = self.dir
