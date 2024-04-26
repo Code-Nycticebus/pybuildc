@@ -50,12 +50,11 @@ def _build_library(context: Context, cc: Compiler, shared=False) -> tuple[Path, 
 
 
 def build(context: Context) -> bool:
-    compile = False
     rebuild = False
 
+    cc = Compiler(context)
+    library, compile = _build_library(context, cc)
     if "exe" in context.config:
-        cc = Compiler(context)
-        library, compile = _build_library(context, cc)
         if compile:
             print("[pybuildc] building exe")
         for name, file in context.config.get("exe", {}).items():
