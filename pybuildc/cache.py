@@ -1,6 +1,7 @@
 from collections import defaultdict
 import pickle
 from pathlib import Path
+from typing import Literal
 
 from pybuildc.types import Action
 from pybuildc.files import Files
@@ -80,5 +81,7 @@ class Cache:
         return deps
 
 
-def cache_load(files: Files, include_dirs: tuple[Path, ...], action: Action) -> Cache:
+def cache_load(
+    files: Files, include_dirs: tuple[Path, ...], action: Action | Literal["shared"]
+) -> Cache:
     return Cache(files, files.build / f"{action}.pck", include_dirs)

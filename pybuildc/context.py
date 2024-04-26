@@ -21,6 +21,7 @@ class Context:
 @contextmanager
 def context_load(
     args: ArgsConfig,
+    shared=False,
 ):
     config = config_load(args.dir / "pybuildc.toml")
     files = files_load(
@@ -33,7 +34,7 @@ def context_load(
     cache = cache_load(
         files,
         sum((d.include for d in dependencies), (args.dir / "src",)),
-        args.action,
+        "shared" if shared else args.action,
     )
 
     context = Context(
