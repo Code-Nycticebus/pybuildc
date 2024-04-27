@@ -56,8 +56,6 @@ def build(context: Context) -> bool:
     rebuild = False
 
     if "exe" in context.config:
-        if compile:
-            print("[pybuildc] building exe")
         for name, file in context.config["exe"].items():
             if platform.system() == "Windows":
                 name += ".exe"
@@ -71,8 +69,6 @@ def build(context: Context) -> bool:
                 )
 
     if "dll" in context.config:
-        if compile:
-            print("[pybuildc] building dll")
         for name, file in context.config["dll"].items():
             if platform.system() == "Windows":
                 name += ".dll"
