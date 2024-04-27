@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 from pathlib import Path
 import shutil
+import platform
 
 from pybuildc.context import Context
 
@@ -31,6 +32,7 @@ class Compiler:
             map(lambda f: tuple(map(lambda x: f"-l{x}", f.link)), context.dependencies),
             (),
         )
+
         self.cflags: list[str] = cflags or []
         self.cflags.extend(
             (
@@ -48,6 +50,10 @@ class Compiler:
         self.cflags.extend(context.args.cflags)
         self.cflags.extend(context.config["pybuildc"].get("cflags", ()))
 
+        
+        if platform.system() == "Windows" and "-fPIC" in self.cflags:
+            self.cflags.remove("-fPIC")
+
     def compile_obj(self, infile: Path, outfile: Path) -> Cmd:
         return (
             self.cc,
@@ -60,7 +66,8 @@ class Compiler:
         )
 
     def compile_dll(self, src: Path, library: Path, outfile: Path) -> Cmd:
-        self.cflags.remove("-fPIC")
+        if "-fPIC" in self.cflags:
+            self.cflags.remove("-fPIC")
         return (
             self.cc,
             *self.includes,
