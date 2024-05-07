@@ -105,7 +105,7 @@ def run(context: Context, argv: list[str]) -> None:
                             context.files.bin.relative_to(context.files.project)
                             / context.args.exe
                         ),
-                        *argv,
+                        *map(lambda a: f'"{a}"', argv), # Wrap in quotes
                     ]
                 ),
                 cwd=context.files.project.absolute(),
