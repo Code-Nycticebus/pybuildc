@@ -13,7 +13,10 @@ def _build_library(context: Context, cc: Compiler) -> tuple[Path, bool]:
         cwd = Path.cwd()
         os.chdir(context.files.project)
         for script in context.config["scripts"]["build"]:
-            subprocess.run([script["cmd"], *script["args"]])
+            try:
+                subprocess.run([script["cmd"], *script["args"]])
+            except FileNotFoundError:
+                print(f"'{script['cmd']}' not found!")
         os.chdir(cwd)
 
     rebuild = context.files.config in context.cache
