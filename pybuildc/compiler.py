@@ -42,6 +42,10 @@ class Compiler:
                 "-Wextra",
                 "-Wshadow",
                 "-Wmissing-include-dirs",
+                "-Wconversion",
+                "-Wmissing-prototypes",
+                "-Wmissing-declarations",
+                "-Wstrict-prototypes",
                 "-pedantic",
             )
             if context.args.mode == "debug"
