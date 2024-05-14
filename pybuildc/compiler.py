@@ -42,7 +42,6 @@ class Compiler:
                 "-Wextra",
                 "-Wshadow",
                 "-Wmissing-include-dirs",
-                "-Wconversion",
                 "-Wmissing-prototypes",
                 "-Wmissing-declarations",
                 "-Wstrict-prototypes",
@@ -54,7 +53,6 @@ class Compiler:
         self.cflags.extend(context.args.cflags)
         self.cflags.extend(context.config["pybuildc"].get("cflags", ()))
 
-        
         if platform.system() == "Windows" and "-fPIC" in self.cflags:
             self.cflags.remove("-fPIC")
 
