@@ -41,7 +41,6 @@ class Compiler:
                 "-Wall",
                 "-Wextra",
                 "-Wshadow",
-                "-Wmissing-include-dirs",
                 "-pedantic",
             )
             if context.args.mode == "debug"
