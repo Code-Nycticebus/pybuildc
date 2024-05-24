@@ -81,7 +81,7 @@ example = "examples/example1.c"
 ```
 
 ## Libraries
-There are different types of libraries. By default it links statically, but you can also include other `pybuildc` projects.
+By default it links statically, but you can also include other `pybuildc` projects.
 ```toml
 [libs]
 math = { l = "m" }
