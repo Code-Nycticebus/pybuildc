@@ -12,7 +12,7 @@ Personal build system for the C language.
 - [Config](#config)
   - [Project Config](#project-config)
   - [Executable](#executable)
-  - [Dependencies](#dependencies)
+  - [Libraries](#libraries)
   - [Build Scripts](#build-scripts)
 
 # Install
