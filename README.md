@@ -80,17 +80,18 @@ main = "src/main.c"
 example = "examples/example1.c"
 ```
 
-## Dependencies
-Add dependencies by specifing it as deps. There are different types of dependencies. By default it links statically, but you could also include other `pybuildc` projects. The 
+## Libraries
+There are different types of libraries. By default it links statically, but you can also include other `pybuildc` projects.
 ```toml
-[deps]
-math = { l="m" }
-other_project = { dir = "other/project/directory", type = "pybuildc" }
+[libs]
+math = { l = "m" }
+prebuild = { dir = "other/prebuild/", I = "include/", L = "lib/", l = "prebuild" }
+project = { dir = "other/project/directory", type = "pybuildc" }
 ```
 
-if its is a platform specific dependency you can specify it like this:
+if its is a platform specific library you can specify it like this:
 ```toml
-[deps.linux]
+[libs.linux]
 math = { l = "m" }
 ```
 
