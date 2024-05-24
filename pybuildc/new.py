@@ -20,7 +20,14 @@ def new(config: ArgsConfig):
         f"""\
 [pybuildc]
 name = "{directory.name}"
-cc = "clang"
+cflags = [
+    "-Werror",
+    "-Wall",
+    "-Wextra",
+    "-Wshadow",
+    "-Wmissing-include-dirs",
+    "-pedantic",
+]
 """
     )
 

@@ -35,16 +35,7 @@ class Compiler:
 
         self.cflags: list[str] = cflags or []
         self.cflags.extend(
-            (
-                "-g",
-                "-Werror",
-                "-Wall",
-                "-Wextra",
-                "-Wshadow",
-                "-pedantic",
-            )
-            if context.args.mode == "debug"
-            else ("-O2", "-DNDEBUG")
+            ("-g") if context.args.mode == "debug" else ("-O2", "-DNDEBUG")
         )
         self.cflags.extend(context.args.cflags)
         self.cflags.extend(context.config["pybuildc"].get("cflags", ()))
