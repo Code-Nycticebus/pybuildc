@@ -71,14 +71,14 @@ class Pybuildc(Dependency):
         self.dir = files.project / config["dir"]
         self.config = config
         self.file = config_load(self.dir / "pybuildc.toml")
-        self.build_dir = files.build / "deps" / name
+        self.build_dir = files.build / "libs" / name
         self.files = files_load(
             self.dir,
             self.config.get("mode", "release"),
             list(self.file.get("exe", {}).values()),
             build=self.build_dir,
         )
-        self.deps = dependencies_load(self.files, self.file.get("deps", {}))
+        self.deps = dependencies_load(self.files, self.file.get("libs", {}))
 
     @cached_property
     def cflags(self) -> tuple[str, ...]:

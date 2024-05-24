@@ -27,7 +27,7 @@ def context_load(args: ArgsConfig):
         list(config.get("exe", {}).values()),
         build=args.build_dir,
     )
-    dependencies = dependencies_load(files, config.get("deps", {}))
+    dependencies = dependencies_load(files, config.get("libs", {}))
     cache = cache_load(
         files,
         sum((d.include for d in dependencies), (args.dir / "src",)),

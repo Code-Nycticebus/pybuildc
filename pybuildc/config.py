@@ -32,7 +32,7 @@ class Scripts(TypedDict):
 
 class Config(TypedDict):
     pybuildc: Project
-    deps: dict[str, DepConfig]
+    libs: dict[str, DepConfig]
     scripts: Scripts
     exe: dict[str, str]
     dll: dict[str, str]
