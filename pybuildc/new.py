@@ -24,8 +24,12 @@ cflags = [
     "-Werror",
     "-Wall",
     "-Wextra",
-    "-Wshadow",
+    "-Wmissing-declarations",
     "-Wmissing-include-dirs",
+    "-Wmissing-prototypes",
+    "-Wshadow",
+    "-Wconversion",
+    "-Wstrict-prototypes",
     "-pedantic",
 ]
 """
